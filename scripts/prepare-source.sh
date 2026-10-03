@@ -121,6 +121,9 @@ else
       (cd "$workdir" && cargo vendor >/dev/null)
       # Note: cargo vendor only creates .orig backups when it modifies
       # Cargo.toml files. If none are created, the vendor dir is still valid.
+      # Delete RFC docs from vendored crates (e.g. mozim/doc/rfc/): lintian
+      # flags them as license-problem-non-free-RFC (error).
+      find "$workdir/vendor" -path "*/doc/rfc/*.txt" -delete 2>/dev/null || true
       mkdir -p "$workdir/.cargo"
       cat > "$workdir/.cargo/config.toml" <<'EOF'
 [source.crates-io]
