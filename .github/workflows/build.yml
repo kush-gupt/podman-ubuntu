@@ -30,7 +30,7 @@ jobs:
     outputs:
       skipped: ${{ steps.skipcheck.outputs.skipped }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Skip if already published
         id: skipcheck
@@ -45,7 +45,7 @@ jobs:
 
       - name: Restore language caches
         if: steps.skipcheck.outputs.skipped != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload artifacts
         if: steps.skipcheck.outputs.skipped != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: debs-${{ inputs.component }}-${{ inputs.version }}-${{ inputs.track }}-u${{ inputs.ubuntu_version }}-${{ inputs.arch }}
           path: |
