@@ -15,3 +15,10 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	$(MAKE) PREFIX=/usr DESTDIR=debian/aardvark-dns install
+
+# dh_clean deletes *.orig, but cargo's vendored .orig files are required
+# for the offline build. Move vendor aside during clean.
+override_dh_clean:
+	if [ -d vendor ]; then mv vendor vendor.keep; fi
+	dh_clean
+	if [ -d vendor.keep ]; then mv vendor.keep vendor; fi
