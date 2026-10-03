@@ -118,9 +118,11 @@ jobs:
           # Actually run a container: exercises podman + crun + conmon +
           # netavark end to end. vfs storage driver for reliability inside
           # this nested container; --privileged on the job container
-          # allows the clone/mount syscalls podman needs.
+          # allows the clone/mount syscalls podman needs. --cgroups=disabled
+          # because cgroup v2 controller delegation does not work inside
+          # GitHub's nested job containers (not a packaging issue).
           podman --storage-driver=vfs info --format '{{.Host.Arch}} {{.Version.Version}}'
-          podman --storage-driver=vfs run --rm docker.io/library/alpine:latest echo "hello from podman ${TRACK}"
+          podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from podman ${TRACK}"
 
   publish:
     needs: [setup, smoke]

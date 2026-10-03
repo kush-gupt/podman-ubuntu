@@ -10,8 +10,10 @@ Rules-Requires-Root: no
 
 Package: netavark
 Architecture: any
-# netavark shells out to the nft binary at runtime to program networks.
-Depends: ${shlibs:Depends}, ${misc:Depends}, nftables
+# netavark shells out to the nft/iptables binaries at runtime to program
+# networks. The same packaging builds netavark 1.x (iptables) and 2.x
+# (nftables); depend on both so every track works out of the box.
+Depends: ${shlibs:Depends}, ${misc:Depends}, nftables, iptables
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.
