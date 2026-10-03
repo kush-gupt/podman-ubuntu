@@ -102,7 +102,7 @@ jobs:
           # (artifact dirs look like debs-conmon-2.1.13-v5-u24.04-amd64).
           UVER="${{ matrix.ubuntu_version }}"
           TRACK="${{ matrix.track }}"
-          find "debs" -path "*${TRACK}-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
+          find "debs" -path "*${TRACK}-u${UVER}-amd64*" -name '*.deb' -exec dpkg -i {} + || true
           apt-get install -f -y -qq
           # Every binary in the stack reports a version. netavark and
           # aardvark-dns live in libexec, not PATH.
