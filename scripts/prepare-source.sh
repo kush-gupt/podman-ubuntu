@@ -31,7 +31,11 @@ SUBDIR=""
 KIND=""
 case "$COMPONENT" in
   podman)          TARBALL="https://github.com/containers/podman/archive/refs/tags/v${VERSION}.tar.gz"; KIND=go ;;
-  crun)            TARBALL="https://github.com/containers/crun/archive/refs/tags/${VERSION}.tar.gz"; KIND=c ;; # no v prefix
+  crun)
+    # Release tarball (not the auto-generated GitHub archive): it bundles
+    # the libocispec submodule, which the auto archive omits.
+    TARBALL="https://github.com/containers/crun/releases/download/${VERSION}/crun-${VERSION}.tar.gz"
+    KIND=c ;;
   conmon)          TARBALL="https://github.com/containers/conmon/archive/refs/tags/v${VERSION}.tar.gz"; KIND=c ;;
   netavark)        TARBALL="https://github.com/containers/netavark/archive/refs/tags/v${VERSION}.tar.gz"; KIND=rust ;;
   aardvark-dns)    TARBALL="https://github.com/containers/aardvark-dns/archive/refs/tags/v${VERSION}.tar.gz"; KIND=rust ;;

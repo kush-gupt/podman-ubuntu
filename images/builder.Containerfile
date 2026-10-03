@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcap-dev \
     libglib2.0-dev \
     libgpgme-dev \
+    libjson-c-dev \
     libseccomp-dev \
     libsystemd-dev \
     libyajl-dev \
