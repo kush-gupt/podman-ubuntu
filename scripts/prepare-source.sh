@@ -110,11 +110,20 @@ EOF
 fi
 
 # Stamp the changelog for this exact version (no-op if already correct).
+# If the overlaid changelog is unparseable (e.g. a stale invalid version),
+# recreate it rather than failing the build.
 cur_ver=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Version 2>/dev/null || echo none)
 if [ "$cur_ver" != "${VERSION}-1" ]; then
-  (cd "$workdir" && dch --newversion "${VERSION}-1" \
-    --distribution unstable --urgency medium \
-    "New upstream release ${VERSION}.")
+  if ! (cd "$workdir" && dch --newversion "${VERSION}-1" \
+      --distribution unstable --urgency medium \
+      "New upstream release ${VERSION}."); then
+    echo "changelog unparseable; recreating" >&2
+    rm -f "$workdir/debian/changelog"
+    (cd "$workdir" && dch --create --package "$COMPONENT" \
+      --newversion "${VERSION}-1" \
+      --distribution unstable --urgency medium \
+      "New upstream release ${VERSION}.")
+  fi
 fi
 
 # Build the source package (.dsc + .orig.tar.gz).
