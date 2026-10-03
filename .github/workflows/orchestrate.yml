@@ -98,6 +98,9 @@ jobs:
           path: debs
       - run: |
           apt-get update -qq
+          # CA certs: the minimal ubuntu container image can't verify
+          # registry TLS without them, which breaks image pulls.
+          apt-get install -y -qq ca-certificates
           # Install debs for this Ubuntu version, track, and amd64 arch
           # (artifact dirs look like debs-conmon-2.1.13-v5-u24.04-amd64).
           UVER="${{ matrix.ubuntu_version }}"
