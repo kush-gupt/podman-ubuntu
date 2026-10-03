@@ -96,7 +96,8 @@ jobs:
           path: debs
       - run: |
           apt-get update -qq
-          find debs -name '*.deb' -exec apt-get install -y -qq {} +
+          find debs -type f -name '*.deb' -exec dpkg -i {} +
+          apt-get install -f -y -qq
           podman --version
           podman info --format '{{.Host.Arch}} {{.Version.Version}}'
 
