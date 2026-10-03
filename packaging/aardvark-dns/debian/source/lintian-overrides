@@ -1,4 +1,4 @@
 # Vendored Rust crates include RFC documentation with non-free licenses.
 # These are documentation files, not code, and are required for the offline build.
-aardvark-dns source: license-problem-non-free-RFC [vendor/mozim/doc/rfc/*]
-aardvark-dns source: license-problem-non-free-RFC-BCP78 [vendor/mozim/doc/rfc/*]
+aardvark-dns source: license-problem-non-free-RFC
+aardvark-dns source: license-problem-non-free-RFC-BCP78
