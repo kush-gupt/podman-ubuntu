@@ -16,6 +16,12 @@ override_dh_auto_build:
 override_dh_auto_install:
 	$(MAKE) PREFIX=/usr DESTDIR=debian/netavark install
 
+# netavark 1.x programs the firewall via iptables; 2.x moved to nftables.
+# Depend on the backend matching the major version being built.
+FIREWALL_BACKEND := $(shell dpkg-parsechangelog -S Version 2>/dev/null | grep -q '^1\.' && echo iptables || echo nftables)
+override_dh_gencontrol:
+	dh_gencontrol -- -Vnetavark:firewall=$(FIREWALL_BACKEND)
+
 # dh_clean deletes *.orig recursively, but cargo's vendored .orig files are
 # required for the offline build. Stash vendor outside the tree during clean.
 override_dh_clean:
