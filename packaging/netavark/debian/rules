@@ -2,12 +2,16 @@
 # Crate sources are vendored by scripts/prepare-source.sh (cargo vendor);
 # the sbuild itself runs fully offline.
 export CARGO_NET_OFFLINE := true
+# The Actions runner overrides HOME but the rustup toolchain lives under
+# /root in the builder image; point rustup back explicitly.
+export RUSTUP_HOME ?= /root/.rustup
+export CARGO_HOME ?= /root/.cargo
 
 %:
 	dh $@
 
 override_dh_auto_build:
-	$(MAKE)
+	$(MAKE) build
 
 override_dh_auto_install:
 	$(MAKE) PREFIX=/usr DESTDIR=debian/netavark install

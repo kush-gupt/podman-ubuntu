@@ -86,12 +86,32 @@ else
   rm -rf "$workdir" && mv "$srcpath" "$workdir"
   rm -rf "$tmpdir"
 
+  # Create the pristine .orig.tar.gz now (3.0 quilt requires it in the
+  # parent dir before dpkg-buildpackage -S). Do it before vendoring or
+  # the debian/ overlay so it stays pristine upstream.
+  origname="${COMPONENT}_${VERSION}.orig.tar.gz"
+  (cd "$SRC" && tar -czf "$origname" "$(basename "$workdir")")
+
   # Vendor language dependencies now; the sbuild chroot is offline.
   case "$KIND" in
     go)
       (cd "$workdir" && go mod vendor)
       ;;
     rust)
+      # The Actions runner overrides HOME (e.g. /github/home) but the
+      # rustup toolchain was installed under /root in the builder image.
+      # Point rustup back explicitly.
+      if [ -z "${RUSTUP_HOME:-}" ]; then
+        for d in /root/.rustup "$HOME/.rustup"; do
+          if [ -d "$d/toolchains" ]; then export RUSTUP_HOME="$d"; break; fi
+        done
+      fi
+      if [ -z "${CARGO_HOME:-}" ]; then
+        for d in /root/.cargo "$HOME/.cargo"; do
+          if [ -d "$d" ]; then export CARGO_HOME="$d"; break; fi
+        done
+      fi
+      export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
       (cd "$workdir" && cargo vendor >/dev/null)
       mkdir -p "$workdir/.cargo"
       cat > "$workdir/.cargo/config.toml" <<'EOF'

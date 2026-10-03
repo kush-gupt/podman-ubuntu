@@ -47,6 +47,9 @@ ARG RUST_VERSION=1.88.0
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh -s -- -y --default-toolchain "${RUST_VERSION}" --profile minimal
 ENV PATH="/root/.cargo/bin:${PATH}"
+# The Actions runner overrides HOME (e.g. /github/home), which would make
+# rustup look for its toolchains in the wrong place. Pin the real locations.
+ENV RUSTUP_HOME="/root/.rustup" CARGO_HOME="/root/.cargo"
 
 # sbuild in unshare mode uses this image itself as the build chroot.
 RUN sbuild-adduser root || true

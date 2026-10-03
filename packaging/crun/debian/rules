@@ -1,3 +1,9 @@
 #!/usr/bin/make -f
 %:
 	dh $@ --with autoreconf
+
+# Upstream ships a GNUmakefile whose default target aborts when no
+# configured Makefile exists yet; only run distclean if configured.
+override_dh_auto_clean:
+	if test -f Makefile; then $(MAKE) distclean; fi
+	dh_autoreconf_clean
