@@ -16,9 +16,9 @@ override_dh_auto_build:
 override_dh_auto_install:
 	$(MAKE) PREFIX=/usr DESTDIR=debian/netavark install
 
-# dh_clean deletes *.orig, but cargo's vendored .orig files are required
-# for the offline build. Move vendor aside during clean.
+# dh_clean deletes *.orig recursively, but cargo's vendored .orig files are
+# required for the offline build. Stash vendor outside the tree during clean.
 override_dh_clean:
-	if [ -d vendor ]; then mv vendor vendor.keep; fi
-	dh_clean
-	if [ -d vendor.keep ]; then mv vendor.keep vendor; fi
+	if [ -d vendor ]; then mv vendor ../vendor.stash; fi
+	dh_clean || true
+	if [ -d ../vendor.stash ]; then mv ../vendor.stash vendor; fi
