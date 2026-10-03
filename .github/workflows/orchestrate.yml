@@ -3,6 +3,11 @@
 # Triggered by merging a watch PR (or a packaging change).
 name: orchestrate
 
+# Only one orchestrate runs at a time; a new push cancels the in-progress run.
+concurrency:
+  group: orchestrate-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
