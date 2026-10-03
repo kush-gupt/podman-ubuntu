@@ -48,18 +48,48 @@ jobs:
             echo "skipped=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Restore language caches
+      - name: Point dependency caches at the workspace
         if: steps.skipcheck.outputs.skipped != 'true'
+        run: |
+          # actions/cache runs on the host runner, but the toolchain runs
+          # inside the build container. The workspace is bind-mounted at the
+          # same files on both sides, so workspace-relative cache homes are
+          # the only locations the two agree on. (The old ~/.cargo etc. paths
+          # silently cached nothing: ~ resolved to the host runner's home,
+          # while the build actually uses /root/.cargo and /github/home.)
+          # $GITHUB_WORKSPACE here is the container-side path (/__w/...).
+          mkdir -p "$GITHUB_WORKSPACE/.ci-cache"
+          echo "CARGO_HOME=$GITHUB_WORKSPACE/.ci-cache/cargo" >> "$GITHUB_ENV"
+          echo "GOMODCACHE=$GITHUB_WORKSPACE/.ci-cache/gomod" >> "$GITHUB_ENV"
+          echo "GOCACHE=$GITHUB_WORKSPACE/.ci-cache/gobuild" >> "$GITHUB_ENV"
+
+      - name: Restore cargo registry cache
+        if: steps.skipcheck.outputs.skipped != 'true' && (inputs.component == 'netavark' || inputs.component == 'aardvark-dns')
+        uses: actions/cache@v5
+        with:
+          # Relative paths resolve against the host-side workspace, which is
+          # the same bind mount the container wrote to above.
+          path: .ci-cache/cargo
+          # The registry is pure downloaded sources: identical for every arch
+          # and Ubuntu version, so one shared key serves all cells. Stale
+          # restores are safe (cargo verifies checksums against Cargo.lock).
+          key: cargo-registry-${{ hashFiles('packaging/components.json') }}
+          restore-keys: |
+            cargo-registry-
+
+      - name: Restore Go module and build caches
+        if: steps.skipcheck.outputs.skipped != 'true' && inputs.component == 'podman'
         uses: actions/cache@v5
         with:
           path: |
-            ~/.cache/go-build
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.ccache
-          key: ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-${{ hashFiles('packaging/components.json') }}
+            .ci-cache/gomod
+            .ci-cache/gobuild
+          # Module cache is arch-independent sources; the build cache is
+          # content-keyed by Go itself, so sharing one key across cells is
+          # safe and maximizes hits.
+          key: go-${{ hashFiles('packaging/components.json') }}
           restore-keys: |
-            ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-
+            go-
 
       - name: Prepare source package
         if: steps.skipcheck.outputs.skipped != 'true'

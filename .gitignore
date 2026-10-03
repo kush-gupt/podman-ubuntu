@@ -25,3 +25,6 @@ secring.*
 # Python
 __pycache__/
 *.pyc
+
+# CI dependency caches (workspace-relative homes for container builds)
+.ci-cache/
