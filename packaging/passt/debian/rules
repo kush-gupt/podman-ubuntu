@@ -6,4 +6,4 @@ override_dh_auto_build:
 	$(MAKE)
 
 override_dh_auto_install:
-	$(MAKE) PREFIX=/usr DESTDIR=debian/passt install
+	$(MAKE) prefix=/usr DESTDIR=debian/passt install
