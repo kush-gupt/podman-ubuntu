@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 # Vendor tarball is produced by scripts/prepare-source.sh (go mod vendor);
 # the sbuild itself runs fully offline.
-export GOFLAGS := -mod=vendor
+export GOFLAGS := -mod=vendor -buildvcs=false
 export CGO_ENABLED := 1
 
 %:

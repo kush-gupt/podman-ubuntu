@@ -95,6 +95,9 @@ jobs:
       - name: Lintian gate
         if: steps.skipcheck.outputs.skipped != 'true'
         run: |
+          # Skip *_source.changes (native packages like podman-suite); lintian
+          # can't process them without the .tar.xz.
+          rm -f build/artifacts/*_source.changes
           lintian --fail-on error --tag-display-limit 0 build/artifacts/*.changes
 
       - name: Upload artifacts
