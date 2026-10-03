@@ -69,14 +69,21 @@ jobs:
             "${{ inputs.ubuntu_version }}" \
             "${{ inputs.extra }}"
 
-      - name: Build with sbuild
+      - name: Build binary packages
+        if: steps.skipcheck.outputs.skipped != 'true'
+        # -d: skip build-dep check. The container IS the controlled build
+        # environment (toolchain from upstream, not distro packages, so the
+        # dpkg database can't satisfy golang-go/cargo/rustc). Build-Depends
+        # stay accurate for a future Debian-proper upload.
+        run: |
+          cd "build/src/${{ inputs.component }}-${{ inputs.version }}"
+          dpkg-buildpackage -b -uc -us -d
+
+      - name: Collect artifacts
         if: steps.skipcheck.outputs.skipped != 'true'
         run: |
-          cd build/artifacts
-          sbuild --chroot-mode=unshare \
-            -d "${{ inputs.ubuntu_version }}" \
-            --no-run-lintian \
-            ./*.dsc
+          mv build/src/*.deb build/src/*.buildinfo build/src/*.changes \
+            build/artifacts/
 
       - name: Lintian gate
         if: steps.skipcheck.outputs.skipped != 'true'
