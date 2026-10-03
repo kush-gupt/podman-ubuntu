@@ -119,6 +119,8 @@ jobs:
         with:
           pattern: debs-*
           path: debs
+      - name: Install reprepro
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq reprepro
       - name: Assemble, sign and prune the apt repository
         env:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
