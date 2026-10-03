@@ -1,1 +1,4 @@
-{"_note":"Build manifest: component -> podman-version -> true once published. Updated by the publish job. Excluded from the orchestrate trigger paths.","built":{}}
+{
+  "_note": "Build manifest: component -> podman-version -> true once published. Updated by the publish job. Excluded from the orchestrate trigger paths.",
+  "built": {}
+}
