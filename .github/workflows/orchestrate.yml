@@ -100,7 +100,6 @@ jobs:
           # debs-conmon-2.1.13-v5-u24.04-amd64) and amd64 arch. Only install
           # the stable track (v5 and stable conflict).
           UVER="${{ matrix.ubuntu_version }}"
-          find "debs" -path "*stable-u${UVER}-amd64*" -name '*_amd64.deb' | sort
           find "debs" -path "*stable-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
           apt-get install -f -y -qq
           podman --version

@@ -18,9 +18,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
          conmon (>= 2.0),
          crun | runc,
-         netavark,
-         containers-common
-Recommends: podman-docker
+         netavark
+Recommends: podman-docker,
+            containers-common
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
