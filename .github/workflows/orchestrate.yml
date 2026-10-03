@@ -17,6 +17,7 @@ on:
       - "ubuntu-versions.json"
       - "packaging/**"
       - "scripts/prepare-source.sh"
+      - "scripts/publish-repo.sh"
       - "scripts/build_matrix.py"
       - "scripts/is_built.py"
       - ".github/workflows/orchestrate.yml"

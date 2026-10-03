@@ -72,12 +72,20 @@ printf 'verbose\n' > "$APTD/conf/options"
 # (actions/download-artifact nests each artifact under its own directory).
 # Fail loudly when nothing matches: silently publishing an empty repo is how
 # the apt-repo branch once shipped zero packages.
+#
+# Group by (component, version, ubuntu, arch): the same component version
+# pinned in two tracks (e.g. passt in v5 and stable) builds twice with
+# identical inputs, producing byte-different debs with the same
+# (name, version, arch). reprepro's pool is shared across suites and can
+# only hold one file per pool path, so include a single copy into every
+# track-suite in the group.
 shopt -s nullglob
 deb_dirs=( debs/debs-*/ )
 if [ "${#deb_dirs[@]}" -eq 0 ]; then
   echo "ERROR: no debs/debs-*/ artifact dirs found; refusing to publish an empty repo" >&2
   exit 1
 fi
+declare -A group_tracks group_dir
 for dir in "${deb_dirs[@]}"; do
   # debs-<component>-<version>-<track>-u<ubuntu>-<arch>/
   base="${dir%/}"
@@ -90,11 +98,20 @@ for dir in "${deb_dirs[@]}"; do
   compver="${rest%-*}"
   component="${compver%-*}"
   version="${compver##*-}"
-  suite="${track}-$(flat "$ubuntu")"
-  for deb in "$dir"/*.deb; do
-    reprepro -b "$APTD" includedeb "$suite" "$deb"
+  key="${component}|${version}|${ubuntu}|${arch}"
+  group_tracks[$key]+=" $track"
+  [ -z "${group_dir[$key]:-}" ] && group_dir[$key]="$dir"
+done
+for key in "${!group_dir[@]}"; do
+  IFS='|' read -r component version ubuntu arch <<< "$key"
+  dir="${group_dir[$key]}"
+  for track in ${group_tracks[$key]}; do
+    suite="${track}-$(flat "$ubuntu")"
+    for deb in "$dir"/*.deb; do
+      reprepro -b "$APTD" includedeb "$suite" "$deb"
+    done
   done
-  echo "included $component $version ($track, Ubuntu $ubuntu, $arch)"
+  echo "included $component $version (tracks:${group_tracks[$key]}, Ubuntu $ubuntu, $arch)"
 done
 
 # --- prune: keep newest 3 versions per package per suite --------------------
