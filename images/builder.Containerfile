@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     jq \
     go-md2man \
+    protobuf-compiler \
     distro-info-data \
  && rm -rf /var/lib/apt/lists/*
 
