@@ -64,6 +64,17 @@ def main():
                         })
 
     suites = {"ubuntu": ubuntu, "tracks": sorted(versions.keys())}
+    outputs = {"level0": level0, "level1": level1, "suites": suites}
+
+    # Single-output mode: `build_matrix.py <name>` prints ONLY that output's
+    # JSON to stdout (used with command substitution in workflow steps).
+    if len(sys.argv) > 1:
+        name = sys.argv[1]
+        if name not in outputs:
+            print(f"ERROR: unknown output {name!r}", file=sys.stderr)
+            sys.exit(1)
+        print(json.dumps(outputs[name]))
+        return 0
 
     out = os.environ.get("GITHUB_OUTPUT")
     if out:
@@ -71,7 +82,9 @@ def main():
             f.write(f"level0={json.dumps(level0)}\n")
             f.write(f"level1={json.dumps(level1)}\n")
             f.write(f"suites={json.dumps(suites)}\n")
-    print(f"level0 cells: {len(level0)}, level1 cells: {len(level1)}")
+    print(f"level0 cells: {len(level0)}, level1 cells: {len(level1)}",
+          file=sys.stderr)
+    return 0
 
 
 if __name__ == "__main__":
