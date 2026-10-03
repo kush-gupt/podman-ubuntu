@@ -14,8 +14,11 @@ override_dh_auto_install:
 		debian/containers-common/etc/containers/containers.conf
 	install -D -m0644 pkg/seccomp/seccomp.json \
 		debian/containers-common/etc/containers/seccomp.json
-	install -D -m0644 rpm/policy.json \
-		debian/containers-common/etc/containers/policy.json
+	# rpm/policy.json exists in 0.69.2+ but not in 0.67.2; install if present.
+	if [ -f rpm/policy.json ]; then \
+		install -D -m0644 rpm/policy.json \
+			debian/containers-common/etc/containers/policy.json; \
+	fi
 	# No canonical registries.conf ships in common/; tests/registries.conf
 	# is the sane default (docker.io, quay.io search registries).
 	install -D -m0644 tests/registries.conf \
