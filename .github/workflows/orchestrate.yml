@@ -103,7 +103,6 @@ jobs:
           find "debs" -path "*stable-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
           apt-get install -f -y -qq
           podman --version
-          podman info --format '{{.Host.Arch}} {{.Version.Version}}'
 
   publish:
     needs: [setup, smoke]
