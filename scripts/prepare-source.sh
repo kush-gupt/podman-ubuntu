@@ -68,13 +68,23 @@ else
     *.tar.xz) TARFLAGS="-xJ" ;;
     *)        TARFLAGS="-xz" ;;
   esac
-  curl -fsSL "$TARBALL" | tar "$TARFLAGS" -C "$SRC"
-  # Normalize the extracted top-level dir name.
-  extracted=$(ls -dt "$SRC"/*/ | head -1)
-  if [ -n "$SUBDIR" ]; then
-    extracted="${extracted}${SUBDIR}/"
+  # Extract into a dedicated temp dir so the top-level entry is
+  # unambiguous (never confused with $workdir itself).
+  tmpdir=$(mktemp -d)
+  curl -fsSL "$TARBALL" | tar "$TARFLAGS" -C "$tmpdir"
+  topcount=$(ls -A "$tmpdir" | wc -l)
+  if [ "$topcount" -ne 1 ]; then
+    echo "unexpected tarball layout ($topcount top-level entries)" >&2
+    ls -A "$tmpdir" >&2
+    exit 1
   fi
-  rm -rf "$workdir" && mv "$extracted" "$workdir"
+  srcpath="$tmpdir/$(ls -A "$tmpdir")"
+  if [ -n "$SUBDIR" ]; then
+    srcpath="${srcpath}/${SUBDIR}"
+  fi
+  [ -e "$srcpath" ] || { echo "missing $srcpath after extract" >&2; exit 1; }
+  rm -rf "$workdir" && mv "$srcpath" "$workdir"
+  rm -rf "$tmpdir"
 
   # Vendor language dependencies now; the sbuild chroot is offline.
   case "$KIND" in
@@ -100,7 +110,7 @@ EOF
 fi
 
 # Stamp the changelog for this exact version (no-op if already correct).
-cur_ver=$(dpkg-parsechangelog -S Version 2>/dev/null || echo none)
+cur_ver=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Version 2>/dev/null || echo none)
 if [ "$cur_ver" != "${VERSION}-1" ]; then
   (cd "$workdir" && dch --newversion "${VERSION}-1" \
     --distribution unstable --urgency medium \
