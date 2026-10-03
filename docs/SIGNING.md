@@ -44,6 +44,17 @@ gpg --list-keys --with-colons <MASTER_FPR> | awk -F: '/^fpr:/ {print $10}'
 5. The next publish signs with the new subkey. Old `InRelease` files remain
    verifiable against the old public key in git history.
 
+## Rotation history
+
+- **2026-10-03 (compromise)**: the publish script committed the
+  passphrase-less CI subkey's private material to the public `apt-repo`
+  branch. Rotated to a fresh keypair (master `4A01F97F3F81FE97A40651B6C64FD8BDD7A7AF10`,
+  signing subkey `4C597668137D76FC625D49117CE75EB1AAB75813`, 1y expiry);
+  old key revoked and removed, `APT_SIGNING_SUBKEY` secret replaced,
+  `apt-repo` branch deleted (recreated on next publish). Master key lives
+  on the hatch VM (`~/.gnupg`); consider moving it to a hardware token per
+  the design above.
+
 ## Verification for users
 
 ```sh
