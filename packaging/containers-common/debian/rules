@@ -14,9 +14,13 @@ override_dh_auto_install:
 		debian/containers-common/etc/containers/containers.conf
 	install -D -m0644 pkg/seccomp/seccomp.json \
 		debian/containers-common/etc/containers/seccomp.json
-	# rpm/policy.json exists in 0.69.2+ but not in 0.67.2; install if present.
+	# rpm/policy.json exists in 0.69.x but not in 0.67.x (v5 track); fall back
+	# to the canonical default policy so `podman run` works everywhere.
 	if [ -f rpm/policy.json ]; then \
 		install -D -m0644 rpm/policy.json \
+			debian/containers-common/etc/containers/policy.json; \
+	else \
+		install -D -m0644 debian/default-policy.json \
 			debian/containers-common/etc/containers/policy.json; \
 	fi
 	# No canonical registries.conf ships in common/; tests/registries.conf

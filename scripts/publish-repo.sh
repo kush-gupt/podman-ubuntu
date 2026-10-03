@@ -35,7 +35,11 @@ APTD="$REPO_ROOT/apt-repo"
 mkdir -p "$APTD/conf" "$APTD/pool" "$APTD/keys"
 
 # --- GPG ------------------------------------------------------------------
-export GNUPGHOME="$APTD/.gnupg"
+# NOTE: the keyring lives outside $APTD on purpose: $APTD is committed to the
+# apt-repo branch, and a previous revision of this script committed the
+# passphrase-less secret subkey to that public branch. Never put GNUPGHOME
+# back under $APTD.
+export GNUPGHOME="$REPO_ROOT/.gnupg-publish"
 mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
 echo "$APT_SIGNING_SUBKEY" | base64 -d | gpg --batch --import
 FPR=$(gpg --batch --list-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
@@ -64,8 +68,17 @@ EOF
 printf 'verbose\n' > "$APTD/conf/options"
 
 # --- include debs ----------------------------------------------------------
+# Artifacts download to debs/debs-<component>-<version>-<track>-u<ubuntu>-<arch>/
+# (actions/download-artifact nests each artifact under its own directory).
+# Fail loudly when nothing matches: silently publishing an empty repo is how
+# the apt-repo branch once shipped zero packages.
 shopt -s nullglob
-for dir in debs-*/; do
+deb_dirs=( debs/debs-*/ )
+if [ "${#deb_dirs[@]}" -eq 0 ]; then
+  echo "ERROR: no debs/debs-*/ artifact dirs found; refusing to publish an empty repo" >&2
+  exit 1
+fi
+for dir in "${deb_dirs[@]}"; do
   # debs-<component>-<version>-<track>-u<ubuntu>-<arch>/
   base="${dir%/}"
   rest="${base#debs-}"
@@ -117,15 +130,28 @@ mkdir -p apt-repo-publish
 rsync -a --delete --exclude '.git' --exclude '.gnupg' "$APTD/" apt-repo-publish/
 
 # --- record manifest on main --------------------------------------------------
+# Records (component, version) -> packaging_sha so future builds skip only
+# when both the upstream version AND the packaging inputs are unchanged.
+# (A packaging-only fix like a debian/rules change must trigger a rebuild;
+# the old version-only key silently shipped stale debs.)
 python3 - <<'EOF'
-import json, glob, os
+import json, glob, os, subprocess
 manifest_path = "manifest.json"
 with open(manifest_path) as f:
     manifest = json.load(f)
 built = manifest.setdefault("built", {})
-for d in glob.glob("debs-*/"):
+def packaging_sha(component):
+    # Content of packaging/<component>/ plus the shared prepare-source.sh,
+    # both of which affect the built debs.
+    parts = []
+    for rev in (f"HEAD:packaging/{component}", "HEAD:scripts/prepare-source.sh"):
+        parts.append(subprocess.run(
+            ["git", "rev-parse", rev],
+            capture_output=True, text=True, check=True).stdout.strip())
+    return parts[0][:12] + parts[1][:12]
+for d in glob.glob("debs/debs-*/"):
     base = d.rstrip("/")
-    rest = base[len("debs-"):]
+    rest = base.split("debs-", 1)[1]
     arch = rest.rsplit("-", 1)[1]
     rest = rest.rsplit("-", 1)[0]
     ubuntu = rest.rsplit("-u", 1)[1]
@@ -134,7 +160,9 @@ for d in glob.glob("debs-*/"):
     compver = rest.rsplit("-", 1)[0]
     component = compver.rsplit("-", 1)[0]
     version = compver.rsplit("-", 1)[1]
-    built.setdefault(component, {})[version] = True
+    built.setdefault(component, {})[version] = {
+        "packaging_sha": packaging_sha(component),
+    }
 with open(manifest_path, "w") as f:
     json.dump(manifest, f, indent=2)
     f.write("\n")

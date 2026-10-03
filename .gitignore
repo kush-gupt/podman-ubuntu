@@ -28,3 +28,6 @@ __pycache__/
 
 # CI dependency caches (workspace-relative homes for container builds)
 .ci-cache/
+
+# Publish-time GPG home (never commit key material)
+.gnupg-publish/
