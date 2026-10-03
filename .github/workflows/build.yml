@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload artifacts
         if: steps.skipcheck.outputs.skipped != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: debs-${{ inputs.component }}-${{ inputs.version }}-${{ inputs.track }}-u${{ inputs.ubuntu_version }}-${{ inputs.arch }}
           path: |
