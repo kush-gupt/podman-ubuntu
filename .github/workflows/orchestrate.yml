@@ -104,12 +104,13 @@ jobs:
           TRACK="${{ matrix.track }}"
           find "debs" -path "*${TRACK}-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
           apt-get install -f -y -qq
-          # Every binary in the stack reports a version.
+          # Every binary in the stack reports a version. netavark and
+          # aardvark-dns live in libexec, not PATH.
           podman --version
           conmon --version
           crun --version
-          netavark --version
-          aardvark-dns --version
+          /usr/libexec/podman/netavark --version
+          /usr/libexec/podman/aardvark-dns --version
           command -v passt
           # Actually run a container: exercises podman + crun + conmon +
           # netavark end to end. vfs storage driver for reliability inside
