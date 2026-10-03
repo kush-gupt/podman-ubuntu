@@ -26,7 +26,7 @@ jobs:
   build:
     runs-on: ${{ inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     container:
-      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:${{ inputs.ubuntu_version }}
+      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:${{ inputs.ubuntu_version }}-${{ inputs.arch }}
     outputs:
       skipped: ${{ steps.skipcheck.outputs.skipped }}
     steps:
