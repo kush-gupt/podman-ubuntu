@@ -86,12 +86,6 @@ else
   rm -rf "$workdir" && mv "$srcpath" "$workdir"
   rm -rf "$tmpdir"
 
-  # Create the pristine .orig.tar.gz now (3.0 quilt requires it in the
-  # parent dir before dpkg-buildpackage -S). Do it before vendoring or
-  # the debian/ overlay so it stays pristine upstream.
-  origname="${COMPONENT}_${VERSION}.orig.tar.gz"
-  (cd "$SRC" && tar -czf "$origname" "$(basename "$workdir")")
-
   # Vendor language dependencies now; the sbuild chroot is offline.
   case "$KIND" in
     go)
@@ -122,6 +116,14 @@ directory = "vendor"
 EOF
       ;;
   esac
+
+  # Create the .orig.tar.gz AFTER vendoring (3.0 quilt requires it in the
+  # parent dir). The vendored dependencies are part of our upstream
+  # snapshot: keeping them out of the Debian diff avoids "unrepresentable
+  # changes" (mode bits, missing trailing newlines in vendored crates).
+  # This mirrors what Debian packages with vendored sources do.
+  origname="${COMPONENT}_${VERSION}.orig.tar.gz"
+  (cd "$SRC" && tar -czf "$origname" "$(basename "$workdir")")
 
   # Overlay the debian/ directory (the file API does not preserve the
   # executable bit, so enforce it here).
