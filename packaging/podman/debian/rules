@@ -15,3 +15,8 @@ override_dh_auto_install:
 	install -D -m0755 bin/podman-remote debian/podman/usr/bin/podman-remote
 	install -D -m0644 completions/bash/podman \
 		debian/podman/usr/share/bash-completion/completions/podman
+
+# Skip dbgsym generation (not needed for our APT repo; avoids lintian
+# skipping .changes when the .ddeb is missing).
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
