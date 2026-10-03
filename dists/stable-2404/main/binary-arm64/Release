@@ -1,0 +1,6 @@
+Archive: stable-2404
+Component: main
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Architecture: arm64
+Description: podman-ubuntu stable track for Ubuntu 24.04

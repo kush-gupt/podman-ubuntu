@@ -1,0 +1,143 @@
+Package: aardvark-dns
+Version: 1.16.0-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 2742
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
+Priority: optional
+Section: admin
+Filename: pool/main/a/aardvark-dns/aardvark-dns_1.16.0-1~resolute_amd64.deb
+Size: 885544
+SHA256: ad7b5c3df187332efc1cf2898545d6b34c63e80c52ff0ee25db0339b5b33cc08
+SHA1: fa05067507247c841acb26f5bd3a08d1cbde4b19
+MD5sum: d0f8caad1269244d4ce9928aa3f03391
+Description: DNS server for container networks
+ Aardvark-dns provides DNS resolution for Netavark-managed container
+ networks. Required by Podman 6.
+
+Package: conmon
+Version: 2.1.13-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 159
+Depends: libc6 (>= 2.38), libglib2.0-0t64 (>= 2.78.0), libsystemd0
+Priority: optional
+Section: admin
+Filename: pool/main/c/conmon/conmon_2.1.13-1~resolute_amd64.deb
+Size: 32164
+SHA256: dc77f9173a168bf1a0b9e02b2b89524069a04794c3bd673d0059654db233fd40
+SHA1: 57040e3b3d92b0fb8ec389fe105f4664d994b8b6
+MD5sum: d69fe63b9b1d1ab4a4e4b6f03bbbe822
+Description: OCI container runtime monitor
+ conmon is the container monitor used by Podman and CRI-O: it watches the
+ primary process of the container, handles logging, and reports the exit code.
+
+Package: containers-common
+Version: 0.67.2-1~resolute
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 67
+Priority: optional
+Section: admin
+Filename: pool/main/c/containers-common/containers-common_0.67.2-1~resolute_all.deb
+Size: 16640
+SHA256: 93b3c5ce0c0b2d949c1bc4f77b32888d64b5acd68495a82e3f6b8c7b547ed83b
+SHA1: e6011fd08b37aef6d1a582b4c1486b0e88900e90
+MD5sum: 079fb1e3e715aaab18d2762272883a6b
+Description: shared configuration for the containers ecosystem
+ Default configuration files (containers.conf, registries.conf, policy.json,
+ storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
+
+Package: crun
+Version: 1.21-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 1840
+Depends: libc6 (>= 2.38), libcap2 (>= 1:2.10), libseccomp2 (>= 2.3.0), libsystemd0 (>= 246), libyajl2 (>= 2.0.4)
+Priority: optional
+Section: admin
+Filename: pool/main/c/crun/crun_1.21-1~resolute_amd64.deb
+Size: 430110
+SHA256: a483bb92d26720cb0ae8d0ef2c4fe454c284784521bec0e41d9dc0ba8174fc76
+SHA1: e73f0235de5ddcfe9b6fcf68744b882d70cddaeb
+MD5sum: 6a9c8167b25ee1d9d90cecda752fa579
+Description: fast and lightweight OCI runtime written in C
+ crun is a fast and low-memory-footprint OCI container runtime, fully
+ written in C. It is the default runtime used by the podman-ubuntu stack.
+
+Package: netavark
+Version: 1.16.0-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 13438
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2), iptables
+Priority: optional
+Section: admin
+Filename: pool/main/n/netavark/netavark_1.16.0-1~resolute_amd64.deb
+Size: 3758746
+SHA256: f4c312ea3f8cdcfed6486fb691e0f3a3c0bd7aaf55656514bab449b91fd3c0a3
+SHA1: 77788463b2305f169c46d9198ff5523a34f059ad
+MD5sum: 03c18a5ae86599f36b0ede9e520b9740
+Description: OCI container network stack
+ Netavark is the container network stack used by Podman 4.4 and newer,
+ replacing CNI. Required by Podman 6.
+
+Package: passt
+Version: 20260925-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 931
+Depends: libc6 (>= 2.38)
+Priority: optional
+Section: admin
+Filename: pool/main/p/passt/passt_20260925-1~resolute_amd64.deb
+Size: 368296
+SHA256: f670a622d824d181ee46b5f3215da3434ff265775b691db6ff5e3df11b1fed6d
+SHA1: daaec660012845f78649b55931c123c67a0269ae
+MD5sum: a080623e430b72ea40a70d7d41f629c5
+Description: user-mode networking daemons for rootless containers
+ passt and pasta provide user-mode networking for rootless containers and
+ virtual machines. pasta is the default rootless networking backend for
+ Podman 6, replacing slirp4netns.
+
+Package: podman
+Version: 5.8.7-1~resolute
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 78029
+Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
+Recommends: podman-docker, containers-common
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman/podman_5.8.7-1~resolute_amd64.deb
+Size: 24353450
+SHA256: f2f212d96860f909bef1e5264cdba659f22bf0f020cca1ecf68b69c25e79ba58
+SHA1: 8ef58b32205746a726bd8588ad7dfa41917278c4
+MD5sum: 1c9a15bed4394a20945886b2569af590
+Description: daemonless container engine for managing OCI containers
+ Podman manages pods, containers, and container images without requiring a
+ central daemon. It provides a Docker-compatible command line interface and
+ supports rootless operation.
+ .
+ This package is built from upstream releases by the podman-ubuntu project;
+ the packaging is maintained to Debian policy with the intent of proposing
+ it to Debian/Ubuntu proper.
+
+Package: podman-suite
+Version: 5.8.7-1~resolute
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 9
+Depends: podman (= 5.8.7-1~resolute), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman-suite/podman-suite_5.8.7-1~resolute_all.deb
+Size: 1984
+SHA256: f6ac3fbb023530eceec51daa8dd5c362acff57e37e2259cda614ee939499fdc0
+SHA1: 7b7835ab679533e383232ea17fb1af33802d3966
+MD5sum: 315ef6ec48b8a15b5927337a41f645c2
+Description: complete Podman container stack
+ Meta-package pulling in the full podman-ubuntu stack at one consistent
+ version set: podman plus its runtime, networking, and configuration
+ components.
+

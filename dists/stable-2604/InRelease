@@ -1,0 +1,39 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Suite: stable-2604
+Codename: stable-2604
+Date: Sat, 03 Oct 2026 16:36:11 UTC
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu stable track for Ubuntu 26.04
+MD5Sum:
+ 96a9fcfde765b72cd7eae38778de9092 5627 main/binary-amd64/Packages
+ e9cbe5cce6485cac35a47436660f73a4 2170 main/binary-amd64/Packages.gz
+ 0901c9bf0ba29f4dc0d9a60f1cbee6d7 157 main/binary-amd64/Release
+ 6bb22ad5c118e52c01ec2074bfb0f24a 5627 main/binary-arm64/Packages
+ 02d60927cca93c9666c847b6cbc2029d 2170 main/binary-arm64/Packages.gz
+ c596fa9373782d7af25f33234a1b12d8 157 main/binary-arm64/Release
+SHA1:
+ 60f9af65e4ab97f921180188c807de1807db771c 5627 main/binary-amd64/Packages
+ 37816100c4600fbf090846323aef7e94047fcfb4 2170 main/binary-amd64/Packages.gz
+ 6720b5ce75318786adc3f56ee9888679a302bb3c 157 main/binary-amd64/Release
+ 8c1bb43bd15c11eacc3a21627ed9bdce19dff4b0 5627 main/binary-arm64/Packages
+ 8bed73230dae10366b3a86f8ccd8be3594d701bc 2170 main/binary-arm64/Packages.gz
+ b4ae84477553ffa7912d0cb1dff9ad8486effdad 157 main/binary-arm64/Release
+SHA256:
+ 3faa1e5da20155672b04203acf95318c92b3016ea5387d5a01f2da20c00a4cbb 5627 main/binary-amd64/Packages
+ 24d23efc15ba35fd76d50ecc225143c6fd95ef688890c60e791b2270584ae8c8 2170 main/binary-amd64/Packages.gz
+ 5892164c49515336372ba3dfa1b52f78b13e67ff5380b9037fb534e233bd92d2 157 main/binary-amd64/Release
+ 24833c54d8e2762054734171534d64fe2e104fd77576cbaefd601cfff8b53389 5627 main/binary-arm64/Packages
+ a923da24cc7d73d4b4c1933086ce989f1f224c657dfc445e7f2cca9873af68d8 2170 main/binary-arm64/Packages.gz
+ 587c19a2ac54eda89e12fd2483b0e1b900d2ae2853c8ebbc9e8edaeb139c4863 157 main/binary-arm64/Release
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCasEu+wAKCRB8516xqrdY
+E/upAP9YfnEz5rzxkdRL4V+aTJv/nmLHnMAS3Vy5ikyz4W7dkgEA+UX+XFZ/i38m
+gjnDCE8JD1K5KIhYliRzl6609HxHOwo=
+=5YnJ
+-----END PGP SIGNATURE-----

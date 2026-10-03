@@ -1,0 +1,6 @@
+Archive: v5-2404
+Component: main
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Architecture: amd64
+Description: podman-ubuntu v5 track for Ubuntu 24.04

@@ -1,0 +1,29 @@
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Suite: stable-2204
+Codename: stable-2204
+Date: Sat, 03 Oct 2026 16:36:11 UTC
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu stable track for Ubuntu 22.04
+MD5Sum:
+ 3c5ef957e683c3c26d299991d3168216 5572 main/binary-amd64/Packages
+ 58e23330d0d3c5944f7c6f2c1fadf7c4 2168 main/binary-amd64/Packages.gz
+ fa0c20f0ac359e9b2766622df8bd6d25 157 main/binary-amd64/Release
+ fabcfb3145f17d505fc4a3eb4c8fd69b 5571 main/binary-arm64/Packages
+ 78ce2b4c31187753cc749e3d0556d88a 2170 main/binary-arm64/Packages.gz
+ 6a2daa69724819dd3cd450219f3126b2 157 main/binary-arm64/Release
+SHA1:
+ 6f3363d01635c1b0a1f20398bc87754a59c948ab 5572 main/binary-amd64/Packages
+ 87a331ab42e9eb609c8f6bfdf38a5cc83650367f 2168 main/binary-amd64/Packages.gz
+ 3bfba7b7722a054b637ddc464d6b19b90b8edd3a 157 main/binary-amd64/Release
+ 016143f4044914ce4d322cecf6e727595b613bf0 5571 main/binary-arm64/Packages
+ d07085518d07076985699e7dd9913be1b20182ab 2170 main/binary-arm64/Packages.gz
+ 372e33a48ede7bd089f32cbe08d6571cd0b752e0 157 main/binary-arm64/Release
+SHA256:
+ 99c0fc30c7866ef361cb0b3d4d46ceba7790d02b73ee74564745c09c9a0e297b 5572 main/binary-amd64/Packages
+ faf9c2e6fd319b578543d5118aea95b9c222276b2dccaa0ca434c2dcf63123e5 2168 main/binary-amd64/Packages.gz
+ f732abaed7131a1dbcad9db21916b0bcfc3f7e989199a0d0e90c3c40b6b963a4 157 main/binary-amd64/Release
+ 5fada234b0383355277a551a6475c18438a7ca1aa7c86673bb6aaa410d89e1d6 5571 main/binary-arm64/Packages
+ d808962ca6932889a3c0d4824c6723fb8752d5161a30ef49f8ee7cbd1ca27c53 2170 main/binary-arm64/Packages.gz
+ c34e7cdf11a9c449a7f8f0ffa66892cf06438ed576d1c58288d368997d9d2098 157 main/binary-arm64/Release

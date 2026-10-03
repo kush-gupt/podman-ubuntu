@@ -1,0 +1,6 @@
+Archive: v5-2204
+Component: main
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Architecture: arm64
+Description: podman-ubuntu v5 track for Ubuntu 22.04

@@ -1,0 +1,39 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Suite: v5-2404
+Codename: v5-2404
+Date: Sat, 03 Oct 2026 16:36:11 UTC
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu v5 track for Ubuntu 24.04
+MD5Sum:
+ df793f58491a958c2dd15c0371a8b220 5579 main/binary-amd64/Packages
+ 17927222088d1ff6addf8fb13dc83233 2170 main/binary-amd64/Packages.gz
+ 6458a7f6322983d6f7f61d1b35b8d502 149 main/binary-amd64/Release
+ 950cd7e7e2ca39441814b3e90b27a3ca 5579 main/binary-arm64/Packages
+ ed7faa7be222ad6986ed56c4b30b6783 2169 main/binary-arm64/Packages.gz
+ 38d41d250dcd8ef717affc3995837a1e 149 main/binary-arm64/Release
+SHA1:
+ 72fcb5b275897a1c8ef972832a6d5a29d19330a2 5579 main/binary-amd64/Packages
+ f89afc22d65cdd94456f57f4da60f2ee43d7baac 2170 main/binary-amd64/Packages.gz
+ cb60ba4df2404e27a32393785f5c5c3801ea5f87 149 main/binary-amd64/Release
+ 2c3a8fea4771babe11ec5d6d3aa2a490115ed24a 5579 main/binary-arm64/Packages
+ a08aa6c8fa8df4188cd87a2ce0da860cc0af8fb3 2169 main/binary-arm64/Packages.gz
+ 1f6292227a5f8868803cef5b96647dd11ab42038 149 main/binary-arm64/Release
+SHA256:
+ a3310a2739dfe41e4fe21d18737df6ee65d1777bc80ce85df3152062e06d1890 5579 main/binary-amd64/Packages
+ f80afc429c18bb1ead45e5e86d791a5d9c0d357e46a5fded347fd91da4a030bb 2170 main/binary-amd64/Packages.gz
+ 792621bfed6476f7d3137e2dc40ddf3c246de9cd0fc54528d6f9d1d2b195bd4a 149 main/binary-amd64/Release
+ 09951a349a52b9eee85be9269600cf20233ecc13eb8da2cb7fd04ce2958cd0d9 5579 main/binary-arm64/Packages
+ 2f76a121fd49bb02bdf81756feb30a117d7d1fc5a8ec72b1cc490095f4641f2e 2169 main/binary-arm64/Packages.gz
+ 568e44d8f9f17827fa2e75f6ced4015d7d5a06065a6c8c8c31f444065bdb40fe 149 main/binary-arm64/Release
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCasEu+wAKCRB8516xqrdY
+E0jQAP4gfN6X0HlcoicUaV7gjIHukAMGryk1+Mcngrxl5oUL7wD9GNPV29DqTMDD
+CrXYnsjtTumpvEAzQRJdK1ltv/VBZgg=
+=DeEK
+-----END PGP SIGNATURE-----

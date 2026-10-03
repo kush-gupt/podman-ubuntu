@@ -1,0 +1,29 @@
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Suite: v5-2604
+Codename: v5-2604
+Date: Sat, 03 Oct 2026 16:36:11 UTC
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu v5 track for Ubuntu 26.04
+MD5Sum:
+ 53953b0399d358d44728e492d48d2f11 5628 main/binary-amd64/Packages
+ 152e9bc916320eb6455c715cc28be269 2167 main/binary-amd64/Packages.gz
+ d97c40f54e6cfc10023edcd3d59bf691 149 main/binary-amd64/Release
+ 2502e2b0186a190ce7f9be8844530244 5628 main/binary-arm64/Packages
+ 98fdb379f56e35c8a6fb968523242e10 2164 main/binary-arm64/Packages.gz
+ 991057428214b1aea09801246480105b 149 main/binary-arm64/Release
+SHA1:
+ 64983c693d6e46dafc8868ec3fdc7ce85dafd53c 5628 main/binary-amd64/Packages
+ 75eeb3d539e4ab4249270748243d58557e3eaafb 2167 main/binary-amd64/Packages.gz
+ a3683a1642a70fddacab84b8d5001af3e679eb5a 149 main/binary-amd64/Release
+ afd265d7838dfa8568487c4cf7ac0fc6fbc635c4 5628 main/binary-arm64/Packages
+ b12d98361e3b05592e12f7253dd34db4ccbed172 2164 main/binary-arm64/Packages.gz
+ 523ddd545c5cff935560fb98ab9c9ddf4878a232 149 main/binary-arm64/Release
+SHA256:
+ c740a9dd8f5771eefa196052f25d13e6386903d5dad4a220445994ac5ae2724a 5628 main/binary-amd64/Packages
+ 11af9ffc271d90dd410faba68cc1557e386a4e14e1e49510d9f51dcfcce1feb2 2167 main/binary-amd64/Packages.gz
+ 885a5ec9f6fec87dcee2f8a75f20088c790192b5cf53017348ca733a22abc9b6 149 main/binary-amd64/Release
+ 0e6208566c53febc0891724a197b6620bad40c1812a029955b6994183ae380d1 5628 main/binary-arm64/Packages
+ eec65ea6c797a000d8008de3826f35d4758e8d3acfb7dd1a022b7e5a0c12a058 2164 main/binary-arm64/Packages.gz
+ 43df763915d025cd4cc81b5d7504537c880b91d883d03e6e734f9b84bf6e90bb 149 main/binary-arm64/Release
