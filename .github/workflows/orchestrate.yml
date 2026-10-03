@@ -33,7 +33,7 @@ jobs:
       level1: ${{ steps.matrix.outputs.level1 }}
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
@@ -81,7 +81,7 @@ jobs:
     container:
       image: ubuntu:${{ matrix.ubuntu_version }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: debs-*
           path: debs
@@ -99,10 +99,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: debs-*
           path: debs
@@ -111,8 +111,8 @@ jobs:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
           TRACKS: ${{ join(fromJSON(needs.setup.outputs.suites).tracks, ',') }}
         run: bash scripts/publish-repo.sh
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apt-repo-publish
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
