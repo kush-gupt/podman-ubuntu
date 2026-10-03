@@ -54,6 +54,7 @@ jobs:
       ubuntu_version: ${{ matrix.ubuntu_version }}
       arch: ${{ matrix.arch }}
       track: ${{ matrix.track }}
+      extra: ${{ matrix.extra }}
 
   level1:
     needs: [setup, level0]
@@ -70,6 +71,7 @@ jobs:
       ubuntu_version: ${{ matrix.ubuntu_version }}
       arch: ${{ matrix.arch }}
       track: ${{ matrix.track }}
+      extra: ${{ matrix.extra }}
 
   smoke:
     needs: [setup, level1]

@@ -11,6 +11,8 @@ set -euo pipefail
 COMPONENT="$1"
 VERSION="$2"
 UBUNTU_VERSION="$3"
+# Optional 4th arg: component-specific extra data (passt snapshot sha).
+EXTRA="${4:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD="$REPO_ROOT/build"
@@ -21,25 +23,28 @@ mkdir -p "$SRC" "$ART"
 export DEBFULLNAME="Kush Gupta"
 export DEBEMAIL="kushalgupta@gmail.com"
 
-# component -> "repo_url|tag_prefix|kind"
-# kind: go | rust | c | config | meta
-declare -A UPSTREAM=(
-  [podman]="https://github.com/containers/podman|v|go"
-  [crun]="https://github.com/containers/crun|v|c"
-  [conmon]="https://github.com/containers/conmon|v|c"
-  [netavark]="https://github.com/containers/netavark|v|rust"
-  [aardvark-dns]="https://github.com/containers/aardvark-dns|v|rust"
-  [passt]="https://passt.top/passt|v|c" # snapshot tarballs; verify URL pattern on first run
-  [containers-common]="https://github.com/containers/common|v|config"
-  [podman-suite]="local||meta"
-)
-
-info="${UPSTREAM[$COMPONENT]:-}"
-if [ -z "$info" ]; then
-  echo "Unknown component: $COMPONENT" >&2
-  exit 1
-fi
-IFS='|' read -r REPO_URL TAG_PREFIX KIND <<< "$info"
+# Per-component source location. TARBALL is the upstream archive URL;
+# SUBDIR (optional) selects a subdirectory of the extracted tree as the
+# real source root (container-libs hosts several Go modules in one repo).
+TARBALL=""
+SUBDIR=""
+KIND=""
+case "$COMPONENT" in
+  podman)          TARBALL="https://github.com/containers/podman/archive/refs/tags/v${VERSION}.tar.gz"; KIND=go ;;
+  crun)            TARBALL="https://github.com/containers/crun/archive/refs/tags/${VERSION}.tar.gz"; KIND=c ;; # no v prefix
+  conmon)          TARBALL="https://github.com/containers/conmon/archive/refs/tags/v${VERSION}.tar.gz"; KIND=c ;;
+  netavark)        TARBALL="https://github.com/containers/netavark/archive/refs/tags/v${VERSION}.tar.gz"; KIND=rust ;;
+  aardvark-dns)    TARBALL="https://github.com/containers/aardvark-dns/archive/refs/tags/v${VERSION}.tar.gz"; KIND=rust ;;
+  passt)
+    [ -n "$EXTRA" ] || { echo "passt requires the snapshot sha as \$4" >&2; exit 1; }
+    TARBALL="https://passt.top/passt/snapshot/passt-${EXTRA}.tar.xz"; KIND=c ;;
+  containers-common)
+    # go.podman.io/common lives in podman-container-tools/container-libs.
+    TARBALL="https://github.com/podman-container-tools/container-libs/archive/refs/tags/common/v${VERSION}.tar.gz"
+    SUBDIR="common"; KIND=config ;;
+  podman-suite)    KIND=meta ;;
+  *) echo "Unknown component: $COMPONENT" >&2; exit 1 ;;
+esac
 
 workdir="$SRC/${COMPONENT}-${VERSION}"
 rm -rf "$workdir"
@@ -58,12 +63,17 @@ if [ "$COMPONENT" = "podman-suite" ]; then
   cp "$REPO_ROOT/packaging/podman-suite/debian.in/tests-control" \
      "$workdir/debian/tests/control"
 else
-  tag="${TAG_PREFIX}${VERSION}"
-  echo "Fetching $REPO_URL @ $tag"
-  curl -fsSL "$REPO_URL/archive/refs/tags/$tag.tar.gz" \
-    | tar -xz -C "$SRC"
+  echo "Fetching $TARBALL"
+  case "$TARBALL" in
+    *.tar.xz) TARFLAGS="-xJ" ;;
+    *)        TARFLAGS="-xz" ;;
+  esac
+  curl -fsSL "$TARBALL" | tar "$TARFLAGS" -C "$SRC"
   # Normalize the extracted top-level dir name.
   extracted=$(ls -dt "$SRC"/*/ | head -1)
+  if [ -n "$SUBDIR" ]; then
+    extracted="${extracted}${SUBDIR}/"
+  fi
   rm -rf "$workdir" && mv "$extracted" "$workdir"
 
   # Vendor language dependencies now; the sbuild chroot is offline.

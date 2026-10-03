@@ -50,11 +50,14 @@ def main():
                 for comp in STACK_COMPONENTS:
                     cver = stack[comp]
                     if not already_built(comp, cver):
-                        level0.append({
+                        cell = {
                             "component": comp, "version": cver,
                             "ubuntu_version": rel, "arch": arch,
                             "track": track,
-                        })
+                        }
+                        if comp == "passt":
+                            cell["extra"] = stack.get("passt_sha", "")
+                        level0.append(cell)
                 for comp in LEVEL1_COMPONENTS:
                     if not already_built(comp, pver):
                         level1.append({

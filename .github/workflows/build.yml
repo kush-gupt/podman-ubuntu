@@ -21,6 +21,10 @@ on:
       track:
         required: true
         type: string
+      extra:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -62,7 +66,8 @@ jobs:
           bash scripts/prepare-source.sh \
             "${{ inputs.component }}" \
             "${{ inputs.version }}" \
-            "${{ inputs.ubuntu_version }}"
+            "${{ inputs.ubuntu_version }}" \
+            "${{ inputs.extra }}"
 
       - name: Build with sbuild
         if: steps.skipcheck.outputs.skipped != 'true'
