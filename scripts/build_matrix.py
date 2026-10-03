@@ -18,6 +18,10 @@ STACK_COMPONENTS = ["crun", "conmon", "netavark", "aardvark-dns", "passt",
                     "containers-common"]
 LEVEL1_COMPONENTS = ["podman", "podman-suite"]
 ARCHES = ["amd64", "arm64"]
+# Architecture-independent packages: building once is enough. Their debs
+# are byte-meant-identical across arches, and emitting both cells makes
+# reprepro see two same-named debs with different bytes (pool collision).
+ARCH_ALL_COMPONENTS = {"containers-common", "podman-suite"}
 
 
 def load(name):
@@ -48,6 +52,8 @@ def main():
         for rel in ubuntu:
             for arch in ARCHES:
                 for comp in STACK_COMPONENTS:
+                    if comp in ARCH_ALL_COMPONENTS and arch != "amd64":
+                        continue
                     cver = stack[comp]
                     if not already_built(comp, cver):
                         cell = {
@@ -59,6 +65,8 @@ def main():
                             cell["extra"] = stack.get("passt_sha", "")
                         level0.append(cell)
                 for comp in LEVEL1_COMPONENTS:
+                    if comp in ARCH_ALL_COMPONENTS and arch != "amd64":
+                        continue
                     if not already_built(comp, pver):
                         level1.append({
                             "component": comp, "version": pver,
