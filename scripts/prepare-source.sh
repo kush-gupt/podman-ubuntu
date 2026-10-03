@@ -121,6 +121,10 @@ else
       (cd "$workdir" && cargo vendor >/dev/null)
       # Note: cargo vendor only creates .orig backups when it modifies
       # Cargo.toml files. If none are created, the vendor dir is still valid.
+      # Delete Windows-specific static libs from vendor (e.g. winapi): they
+      # are not valid Unix ar archives and break lintian's orig unpack.
+      find "$workdir/vendor" -name "*.a" -path "*winapi*" -delete 2>/dev/null || true
+      find "$workdir/vendor" -name "*.lib" -delete 2>/dev/null || true
       mkdir -p "$workdir/.cargo"
       cat > "$workdir/.cargo/config.toml" <<'EOF'
 [source.crates-io]
