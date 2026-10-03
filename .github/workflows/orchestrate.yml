@@ -99,7 +99,7 @@ jobs:
           # Only install debs matching this Ubuntu version and amd64 arch.
           # Artifact dirs are named like debs-conmon-2.1.13-v5-u24.04-amd64.
           UVER="${{ matrix.ubuntu_version }}"
-          find debs -type d -name "*-u${UVER}-amd64" -exec find {} -type f -name '*_amd64.deb' \; | xargs -r dpkg -i
+          find debs -type d -name "*-u${UVER}-amd64" -exec find {} -type f -name '*_amd64.deb' \; | xargs -r dpkg -i || true
           apt-get install -f -y -qq
           podman --version
           podman info --format '{{.Host.Arch}} {{.Version.Version}}'
