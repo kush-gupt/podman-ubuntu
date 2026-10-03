@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     jq \
+    go-md2man \
     distro-info-data \
  && rm -rf /var/lib/apt/lists/*
 

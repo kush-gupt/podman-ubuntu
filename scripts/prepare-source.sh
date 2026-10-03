@@ -131,19 +131,28 @@ EOF
   chmod +x "$workdir/debian/rules"
 fi
 
-# Stamp the changelog for this exact version (no-op if already correct).
+# Stamp the changelog for this exact version and target suite (no-op if
+# already correct). The suite is the Ubuntu codename so lintian and
+# reprepro see a real distribution, not "unstable".
+case "$UBUNTU_VERSION" in
+  22.04) SUITE=jammy ;;
+  24.04) SUITE=noble ;;
+  26.04) SUITE=resolute ;;
+  *) echo "Unknown Ubuntu version: $UBUNTU_VERSION" >&2; exit 1 ;;
+esac
 # If the overlaid changelog is unparseable (e.g. a stale invalid version),
 # recreate it rather than failing the build.
 cur_ver=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Version 2>/dev/null || echo none)
-if [ "$cur_ver" != "${VERSION}-1" ]; then
+cur_dist=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Distribution 2>/dev/null || echo none)
+if [ "$cur_ver" != "${VERSION}-1" ] || [ "$cur_dist" != "$SUITE" ]; then
   if ! (cd "$workdir" && dch --newversion "${VERSION}-1" \
-      --distribution unstable --urgency medium \
+      --distribution "$SUITE" --urgency medium \
       "New upstream release ${VERSION}."); then
     echo "changelog unparseable; recreating" >&2
     rm -f "$workdir/debian/changelog"
     (cd "$workdir" && dch --create --package "$COMPONENT" \
       --newversion "${VERSION}-1" \
-      --distribution unstable --urgency medium \
+      --distribution "$SUITE" --urgency medium \
       "New upstream release ${VERSION}.")
   fi
 fi

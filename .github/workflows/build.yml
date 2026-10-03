@@ -75,6 +75,11 @@ jobs:
         # environment (toolchain from upstream, not distro packages, so the
         # dpkg database can't satisfy golang-go/cargo/rustc). Build-Depends
         # stay accurate for a future Debian-proper upload.
+        # nocheck: upstream test suites need a container runtime (runc) that
+        # isn't available in the build environment; smoke tests run separately
+        # in the orchestrate workflow's smoke job.
+        env:
+          DEB_BUILD_OPTIONS: nocheck
         run: |
           cd "build/src/${{ inputs.component }}-${{ inputs.version }}"
           dpkg-buildpackage -b -uc -us -d
