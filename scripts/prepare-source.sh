@@ -163,7 +163,7 @@ esac
 cur_ver=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Version 2>/dev/null || echo none)
 cur_dist=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Distribution 2>/dev/null || echo none)
 if [ "$cur_ver" != "${VERSION}-1" ] || [ "$cur_dist" != "$SUITE" ]; then
-  if ! (cd "$workdir" && dch --newversion "${VERSION}-1" \
+  if ! (cd "$workdir" && dch -b --newversion "${VERSION}-1" \
       --distribution "$SUITE" --urgency medium \
       "New upstream release ${VERSION}."); then
     echo "changelog unparseable; recreating" >&2
