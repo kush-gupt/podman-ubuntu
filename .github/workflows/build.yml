@@ -29,6 +29,7 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 60
     container:
       image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:${{ inputs.ubuntu_version }}-${{ inputs.arch }}
     outputs:

@@ -48,7 +48,6 @@ jobs:
   level0:
     needs: setup
     if: needs.setup.outputs.level0 != '[]'
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 20
@@ -66,7 +65,6 @@ jobs:
   level1:
     needs: [setup, level0]
     if: needs.setup.outputs.level1 != '[]'
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 20
