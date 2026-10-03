@@ -33,6 +33,7 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       level0: ${{ steps.matrix.outputs.level0 }}
       level1: ${{ steps.matrix.outputs.level1 }}
@@ -47,6 +48,7 @@ jobs:
   level0:
     needs: setup
     if: needs.setup.outputs.level0 != '[]'
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 20
@@ -64,6 +66,7 @@ jobs:
   level1:
     needs: [setup, level0]
     if: needs.setup.outputs.level1 != '[]'
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       max-parallel: 20
@@ -80,6 +83,7 @@ jobs:
 
   smoke:
     needs: [setup, level1]
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -102,6 +106,7 @@ jobs:
     needs: [setup, smoke]
     runs-on: ubuntu-latest
     environment:
+    timeout-minutes: 60
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
