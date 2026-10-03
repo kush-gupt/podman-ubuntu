@@ -78,8 +78,9 @@ jobs:
         # nocheck: upstream test suites need a container runtime (runc) that
         # isn't available in the build environment; smoke tests run separately
         # in the orchestrate workflow's smoke job.
+        # noddebsym: skip -dbgsym packages (not needed for our APT repo).
         env:
-          DEB_BUILD_OPTIONS: nocheck
+          DEB_BUILD_OPTIONS: nocheck noddebsym
         run: |
           cd "build/src/${{ inputs.component }}-${{ inputs.version }}"
           dpkg-buildpackage -b -uc -us -d

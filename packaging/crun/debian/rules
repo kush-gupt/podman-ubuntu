@@ -7,3 +7,9 @@
 override_dh_auto_clean:
 	if test -f Makefile; then $(MAKE) distclean; fi
 	dh_autoreconf_clean
+
+# Delete .la files: they cause lintian non-empty-dependency_libs-in-la-file
+# errors and are not needed on modern systems.
+override_dh_install:
+	dh_install
+	find debian/crun -name "*.la" -delete
