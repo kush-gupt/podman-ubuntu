@@ -1,0 +1,92 @@
+# Reusable: build ONE component for ONE (ubuntu, arch, track) cell.
+# Runs inside the pre-baked toolchain image; builds a real source package
+# with sbuild in unshare mode, gates on lintian, uploads debs + dsc.
+name: build-component
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      ubuntu_version:
+        required: true
+        type: string
+      arch:
+        required: true
+        type: string
+      track:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:${{ inputs.ubuntu_version }}
+    outputs:
+      skipped: ${{ steps.skipcheck.outputs.skipped }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if already published
+        id: skipcheck
+        run: |
+          if python3 scripts/is_built.py \
+              --component "${{ inputs.component }}" \
+              --version "${{ inputs.version }}"; then
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore language caches
+        if: steps.skipcheck.outputs.skipped != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.ccache
+          key: ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-${{ hashFiles('packaging/components.json') }}
+          restore-keys: |
+            ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-
+
+      - name: Prepare source package
+        if: steps.skipcheck.outputs.skipped != 'true'
+        run: |
+          bash scripts/prepare-source.sh \
+            "${{ inputs.component }}" \
+            "${{ inputs.version }}" \
+            "${{ inputs.ubuntu_version }}"
+
+      - name: Build with sbuild
+        if: steps.skipcheck.outputs.skipped != 'true'
+        run: |
+          cd build/src
+          sbuild --chroot-mode=unshare \
+            -d "${{ inputs.ubuntu_version }}" \
+            --no-run-lintian \
+            --buildinfo-file=../../build/artifacts/ \
+            ../*.dsc
+
+      - name: Lintian gate
+        if: steps.skipcheck.outputs.skipped != 'true'
+        run: |
+          lintian --fail-on error --tag-display-limit 0 build/artifacts/*.changes
+
+      - name: Upload artifacts
+        if: steps.skipcheck.outputs.skipped != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ inputs.component }}-${{ inputs.version }}-${{ inputs.track }}-u${{ inputs.ubuntu_version }}-${{ inputs.arch }}
+          path: |
+            build/artifacts/*.deb
+            build/artifacts/*.dsc
+            build/artifacts/*.buildinfo
+            build/artifacts/*.changes
+          retention-days: 7

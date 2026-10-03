@@ -1,0 +1,78 @@
+# Weekly nightly: build upstream podman main HEAD against the latest
+# stable stack pins, published to the nightly-* suites only.
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 4 * * 1" # weekly Monday 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      matrix: ${{ steps.ver.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA=$(gh api repos/containers/podman/commits/main --jq '.sha[0:7]')
+          DATE=$(date -u +%Y%m%d)
+          BASE=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
+          MAJOR="${BASE%%.*}"
+          VERSION="$((MAJOR + 1)).0.0~git${DATE}.${SHA}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          MATRIX=$(python3 -c "
+          import json
+          releases = json.load(open('ubuntu-versions.json'))['releases']
+          print(json.dumps([{'ubuntu_version': r, 'arch': a} for r in releases for a in ('amd64','arm64')]))
+          ")
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: setup
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      component: podman
+      version: ${{ needs.setup.outputs.version }}
+      ubuntu_version: ${{ matrix.ubuntu_version }}
+      arch: ${{ matrix.arch }}
+      track: nightly
+
+  publish:
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: debs-*
+          path: debs
+      - name: Assemble, sign and prune the apt repository
+        env:
+          APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
+          TRACKS: nightly
+        run: bash scripts/publish-repo.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apt-repo-publish
+      - id: deployment
+        uses: actions/deploy-pages@v4

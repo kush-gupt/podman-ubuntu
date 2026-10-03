@@ -1,0 +1,17 @@
+Source: passt
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               pkg-config,
+               libcap-dev
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: passt
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: user-mode networking daemons for rootless containers
+ passt and pasta provide user-mode networking for rootless containers and
+ virtual machines. pasta is the default rootless networking backend for
+ Podman 6, replacing slirp4netns.

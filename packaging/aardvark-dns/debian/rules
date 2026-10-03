@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+# Crate sources are vendored by scripts/prepare-source.sh (cargo vendor);
+# the sbuild itself runs fully offline.
+export CARGO_NET_OFFLINE := true
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE)
+
+override_dh_auto_install:
+	$(MAKE) PREFIX=/usr DESTDIR=debian/aardvark-dns install

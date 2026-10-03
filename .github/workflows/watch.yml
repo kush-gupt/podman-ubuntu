@@ -1,0 +1,44 @@
+# Watch upstream Podman releases and the Ubuntu support calendar.
+# Opens a PR for every new release / support-set change. Never builds.
+name: watch-upstream
+
+on:
+  schedule:
+    - cron: "17 */6 * * *" # every 6 hours; podman ships ~monthly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new releases and Ubuntu set changes
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/check_releases.py
+
+      - name: Open update PR
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="watch/${{ steps.check.outputs.stamp }}"
+          if gh pr list --head "$BRANCH" --state open --json number -q '.[0].number' | grep -q .; then
+            echo "PR already open for $BRANCH, skipping duplicate."
+            exit 0
+          fi
+          git config user.name "podman-ubuntu-bot"
+          git config user.email "podman-ubuntu-bot@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add versions.json ubuntu-versions.json
+          git commit -m "chore(watch): ${{ steps.check.outputs.summary }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "chore(watch): ${{ steps.check.outputs.summary }}" \
+            --body-file /tmp/watch-pr-body.md

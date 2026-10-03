@@ -1,0 +1,14 @@
+Source: containers-common
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: containers-common
+Architecture: all
+Depends: ${misc:Depends}
+Description: shared configuration for the containers ecosystem
+ Default configuration files (containers.conf, registries.conf, policy.json,
+ storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.

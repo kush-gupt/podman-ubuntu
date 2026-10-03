@@ -1,0 +1,3 @@
+Tests: config-present
+Depends: @
+Test-Command: test -f /etc/containers/containers.conf

@@ -1,0 +1,27 @@
+# Build outputs
+*.deb
+*.dsc
+*.buildinfo
+*.changes
+*.orig.tar.gz
+*.debian.tar.xz
+build/
+apt-repo/
+
+# GPG private material (never commit)
+*.gpg
+*.asc
+!keys/apt-signing.asc
+.apt-signing-subkey.b64
+secring.*
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc

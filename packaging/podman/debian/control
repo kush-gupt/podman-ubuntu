@@ -1,0 +1,31 @@
+Source: podman
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               golang-go,
+               libassuan-dev,
+               libbtrfs-dev,
+               libgpgme-dev,
+               libseccomp-dev,
+               libsystemd-dev,
+               pkg-config
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: podman
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         conmon (>= 2.0),
+         crun | runc,
+         netavark,
+         containers-common
+Recommends: podman-docker
+Description: daemonless container engine for managing OCI containers
+ Podman manages pods, containers, and container images without requiring a
+ central daemon. It provides a Docker-compatible command line interface and
+ supports rootless operation.
+ .
+ This package is built from upstream releases by the podman-ubuntu project;
+ the packaging is maintained to Debian policy with the intent of proposing
+ it to Debian/Ubuntu proper.

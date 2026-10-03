@@ -1,0 +1,118 @@
+# Orchestrator: fan out the component build DAG over the full matrix,
+# smoke-test the result, then publish the signed apt repository.
+# Triggered by merging a watch PR (or a packaging change).
+name: orchestrate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "versions.json"
+      - "components.json"
+      - "ubuntu-versions.json"
+      - "packaging/**"
+      - "scripts/prepare-source.sh"
+      - ".github/workflows/orchestrate.yml"
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Rebuild even if manifest says published"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # publish job pushes the apt-repo branch
+  pages: write
+  id-token: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      level0: ${{ steps.matrix.outputs.level0 }}
+      level1: ${{ steps.matrix.outputs.level1 }}
+      suites: ${{ steps.matrix.outputs.suites }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: matrix
+        run: python3 scripts/build_matrix.py
+        env:
+          FORCE_REBUILD: ${{ inputs.force_rebuild || 'false' }}
+
+  level0:
+    needs: setup
+    if: needs.setup.outputs.level0 != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.level0) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      component: ${{ matrix.component }}
+      version: ${{ matrix.version }}
+      ubuntu_version: ${{ matrix.ubuntu_version }}
+      arch: ${{ matrix.arch }}
+      track: ${{ matrix.track }}
+
+  level1:
+    needs: [setup, level0]
+    if: needs.setup.outputs.level1 != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.level1) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      component: ${{ matrix.component }}
+      version: ${{ matrix.version }}
+      ubuntu_version: ${{ matrix.ubuntu_version }}
+      arch: ${{ matrix.arch }}
+      track: ${{ matrix.track }}
+
+  smoke:
+    needs: [setup, level1]
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu_version: ${{ fromJSON(needs.setup.outputs.suites).ubuntu }}
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:${{ matrix.ubuntu_version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: debs-*
+          path: debs
+    steps:
+      - run: |
+          apt-get update -qq
+          apt-get install -y -qq $(find debs -name '*.deb')
+          podman --version
+          podman info --format '{{.Host.Arch}} {{.Version.Version}}'
+
+  publish:
+    needs: [setup, smoke]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: debs-*
+          path: debs
+      - name: Assemble, sign and prune the apt repository
+        env:
+          APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
+          TRACKS: ${{ join(fromJSON(needs.setup.outputs.suites).tracks, ',') }}
+        run: bash scripts/publish-repo.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apt-repo-publish
+      - id: deployment
+        uses: actions/deploy-pages@v4

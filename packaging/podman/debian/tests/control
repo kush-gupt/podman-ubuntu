@@ -1,0 +1,4 @@
+Tests: smoke
+Depends: @
+Restrictions: needs-root
+Test-Command: podman --version && podman info --format '{{.Version.Version}}'

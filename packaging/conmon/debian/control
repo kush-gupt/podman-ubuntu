@@ -1,0 +1,17 @@
+Source: conmon
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               libglib2.0-dev,
+               libseccomp-dev,
+               pkg-config
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: conmon
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OCI container runtime monitor
+ conmon is the container monitor used by Podman and CRI-O: it watches the
+ primary process of the container, handles logging, and reports the exit code.

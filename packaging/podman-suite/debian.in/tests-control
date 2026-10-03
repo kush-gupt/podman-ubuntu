@@ -1,0 +1,3 @@
+Tests: stack-present
+Depends: @, podman, crun, conmon, netavark, containers-common
+Test-Command: podman --version

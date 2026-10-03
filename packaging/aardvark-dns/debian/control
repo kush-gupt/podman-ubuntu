@@ -1,0 +1,16 @@
+Source: aardvark-dns
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: aardvark-dns
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: DNS server for container networks
+ Aardvark-dns provides DNS resolution for Netavark-managed container
+ networks. Required by Podman 6.

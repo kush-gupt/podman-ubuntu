@@ -1,0 +1,22 @@
+Source: podman-suite
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: podman-suite
+Architecture: all
+Depends: ${misc:Depends},
+         podman (= @PODMAN_VERSION@-1),
+         conmon,
+         crun,
+         netavark,
+         aardvark-dns,
+         passt,
+         containers-common
+Description: complete Podman container stack
+ Meta-package pulling in the full podman-ubuntu stack at one consistent
+ version set: podman plus its runtime, networking, and configuration
+ components.

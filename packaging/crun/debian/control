@@ -1,0 +1,24 @@
+Source: crun
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-autoreconf,
+               autoconf,
+               automake,
+               libtool,
+               pkg-config,
+               libcap-dev,
+               libseccomp-dev,
+               libsystemd-dev,
+               libyajl-dev,
+               python3
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: crun
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: fast and lightweight OCI runtime written in C
+ crun is a fast and low-memory-footprint OCI container runtime, fully
+ written in C. It is the default runtime used by the podman-ubuntu stack.

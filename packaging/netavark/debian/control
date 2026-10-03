@@ -1,0 +1,16 @@
+Source: netavark
+Section: admin
+Priority: optional
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: netavark
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OCI container network stack
+ Netavark is the container network stack used by Podman 4.4 and newer,
+ replacing CNI. Required by Podman 6.

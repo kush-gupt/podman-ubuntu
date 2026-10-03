@@ -1,0 +1,3 @@
+Tests: smoke
+Depends: @
+Test-Command: /usr/libexec/podman/aardvark-dns --version

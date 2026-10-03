@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+# Vendor tarball is produced by scripts/prepare-source.sh (go mod vendor);
+# the sbuild itself runs fully offline.
+export GOFLAGS := -mod=vendor
+export CGO_ENABLED := 1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) podman podman-remote BUILDTAGS="seccomp apparmor systemd"
+
+override_dh_auto_install:
+	install -D -m0755 bin/podman debian/podman/usr/bin/podman
+	install -D -m0755 bin/podman-remote debian/podman/usr/bin/podman-remote
+	install -D -m0644 completions/bash/podman \
+		debian/podman/usr/share/bash-completion/completions/podman
