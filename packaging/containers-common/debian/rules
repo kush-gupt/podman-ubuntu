@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
-# Upstream's config files move around between releases; install whatever
-# known config filenames exist in the tree rather than hardcoding paths.
+# Install the canonical default config files by explicit path. A blind
+# `find` picks up test fixtures (e.g. libimage/testdata/containers.conf)
+# that share basenames with the real files.
 %:
 	dh $@
 
@@ -9,11 +10,13 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	mkdir -p debian/containers-common/etc/containers
-	for f in $$(find . -path ./debian -prune -o \
-		\( -name 'containers.conf' -o -name 'registries.conf' \
-		-o -name 'policy.json' -o -name 'storage.conf' \
-		-o -name 'seccomp.json' \) -print | grep -v vendor); do \
-		install -D -m0644 "$$f" \
-			"debian/containers-common/etc/containers/$$(basename $$f)"; \
-	done
-	test -n "$$(ls debian/containers-common/etc/containers/)"
+	install -D -m0644 pkg/config/containers.conf \
+		debian/containers-common/etc/containers/containers.conf
+	install -D -m0644 pkg/seccomp/seccomp.json \
+		debian/containers-common/etc/containers/seccomp.json
+	install -D -m0644 rpm/policy.json \
+		debian/containers-common/etc/containers/policy.json
+	# No canonical registries.conf ships in common/; tests/registries.conf
+	# is the sane default (docker.io, quay.io search registries).
+	install -D -m0644 tests/registries.conf \
+		debian/containers-common/etc/containers/registries.conf
