@@ -23,6 +23,20 @@ mkdir -p "$SRC" "$ART"
 export DEBFULLNAME="Kush Gupta"
 export DEBEMAIL="kushalgupta@gmail.com"
 
+# Target Ubuntu suite (codename). The Debian revision carries a ~<suite>
+# suffix (e.g. 6.1.2-1~noble): the same upstream version built for different
+# Ubuntu releases produces byte-different debs, and reprepro's shared pool
+# cannot hold two same-named debs with different contents. The suffix keeps
+# pool paths unique per suite. (~ sorts below the bare revision, so a
+# future unsuffixed -1 correctly supersedes these.)
+case "$UBUNTU_VERSION" in
+  22.04) SUITE=jammy ;;
+  24.04) SUITE=noble ;;
+  26.04) SUITE=resolute ;;
+  *) echo "Unknown Ubuntu version: $UBUNTU_VERSION" >&2; exit 1 ;;
+esac
+DEB_VERSION="${VERSION}-1~${SUITE}"
+
 # Per-component source location. TARBALL is the upstream archive URL;
 # SUBDIR (optional) selects a subdirectory of the extracted tree as the
 # real source root (container-libs hosts several Go modules in one repo).
@@ -57,7 +71,7 @@ mkdir -p "$workdir"
 if [ "$COMPONENT" = "podman-suite" ]; then
   # Meta-package generated from a template; no upstream source.
   mkdir -p "$workdir/debian"
-  sed "s/@PODMAN_VERSION@/${VERSION}/g" \
+  sed -e "s/@PODMAN_VERSION@/${VERSION}/g" -e "s/@SUITE@/${SUITE}/g" \
     "$REPO_ROOT/packaging/podman-suite/debian.in/control" > "$workdir/debian/control"
   for f in rules changelog copyright; do
     cp "$REPO_ROOT/packaging/podman-suite/debian.in/$f" "$workdir/debian/$f"
@@ -152,24 +166,18 @@ fi
 # Stamp the changelog for this exact version and target suite (no-op if
 # already correct). The suite is the Ubuntu codename so lintian and
 # reprepro see a real distribution, not "unstable".
-case "$UBUNTU_VERSION" in
-  22.04) SUITE=jammy ;;
-  24.04) SUITE=noble ;;
-  26.04) SUITE=resolute ;;
-  *) echo "Unknown Ubuntu version: $UBUNTU_VERSION" >&2; exit 1 ;;
-esac
 # If the overlaid changelog is unparseable (e.g. a stale invalid version),
 # recreate it rather than failing the build.
 cur_ver=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Version 2>/dev/null || echo none)
 cur_dist=$(dpkg-parsechangelog -l"$workdir/debian/changelog" -S Distribution 2>/dev/null || echo none)
-if [ "$cur_ver" != "${VERSION}-1" ] || [ "$cur_dist" != "$SUITE" ]; then
-  if ! (cd "$workdir" && dch -b --newversion "${VERSION}-1" \
+if [ "$cur_ver" != "${DEB_VERSION}" ] || [ "$cur_dist" != "$SUITE" ]; then
+  if ! (cd "$workdir" && dch -b --newversion "${DEB_VERSION}" \
       --distribution "$SUITE" --urgency medium \
       "New upstream release ${VERSION}."); then
     echo "changelog unparseable; recreating" >&2
     rm -f "$workdir/debian/changelog"
     (cd "$workdir" && dch --create --package "$COMPONENT" \
-      --newversion "${VERSION}-1" \
+      --newversion "${DEB_VERSION}" \
       --distribution "$SUITE" --urgency medium \
       "New upstream release ${VERSION}.")
   fi

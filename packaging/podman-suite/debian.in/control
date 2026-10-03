@@ -9,7 +9,7 @@ Rules-Requires-Root: no
 Package: podman-suite
 Architecture: all
 Depends: ${misc:Depends},
-         podman (= @PODMAN_VERSION@-1),
+         podman (= @PODMAN_VERSION@-1~@SUITE@),
          conmon,
          crun,
          netavark,
