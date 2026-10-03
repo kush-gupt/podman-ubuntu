@@ -57,7 +57,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             ~/.ccache
-            ~/.cache/cargo-target
           key: ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-${{ hashFiles('packaging/components.json') }}
           restore-keys: |
             ${{ inputs.component }}-${{ inputs.ubuntu_version }}-${{ inputs.arch }}-
@@ -81,10 +80,8 @@ jobs:
         # isn't available in the build environment; smoke tests run separately
         # in the orchestrate workflow's smoke job.
         # noddebsym: skip -dbgsym packages (not needed for our APT repo).
-        # CARGO_TARGET_DIR: cache compiled Rust artifacts between runs.
         env:
           DEB_BUILD_OPTIONS: nocheck noddebsym
-          CARGO_TARGET_DIR: ~/.cache/cargo-target/${{ inputs.component }}
         run: |
           cd "build/src/${{ inputs.component }}-${{ inputs.version }}"
           dpkg-buildpackage -b -uc -us -d
