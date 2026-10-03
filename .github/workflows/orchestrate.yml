@@ -86,9 +86,11 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu_version: ${{ fromJSON(needs.setup.outputs.suites).ubuntu }}
+        track: ${{ fromJSON(needs.setup.outputs.suites).tracks }}
     runs-on: ubuntu-latest
     container:
       image: ubuntu:${{ matrix.ubuntu_version }}
+      options: --privileged
     steps:
       - uses: actions/download-artifact@v7
         with:
@@ -96,13 +98,25 @@ jobs:
           path: debs
       - run: |
           apt-get update -qq
-          # Install debs for this Ubuntu version (artifact dirs like
-          # debs-conmon-2.1.13-v5-u24.04-amd64) and amd64 arch. Only install
-          # the stable track (v5 and stable conflict).
+          # Install debs for this Ubuntu version, track, and amd64 arch
+          # (artifact dirs look like debs-conmon-2.1.13-v5-u24.04-amd64).
           UVER="${{ matrix.ubuntu_version }}"
-          find "debs" -path "*stable-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
+          TRACK="${{ matrix.track }}"
+          find "debs" -path "*${TRACK}-u${UVER}-amd64*" -name '*_amd64.deb' -exec dpkg -i {} + || true
           apt-get install -f -y -qq
+          # Every binary in the stack reports a version.
           podman --version
+          conmon --version
+          crun --version
+          netavark --version
+          aardvark-dns --version
+          command -v passt
+          # Actually run a container: exercises podman + crun + conmon +
+          # netavark end to end. vfs storage driver for reliability inside
+          # this nested container; --privileged on the job container
+          # allows the clone/mount syscalls podman needs.
+          podman --storage-driver=vfs info --format '{{.Host.Arch}} {{.Version.Version}}'
+          podman --storage-driver=vfs run --rm docker.io/library/alpine:latest echo "hello from podman ${TRACK}"
 
   publish:
     needs: [setup, smoke]
