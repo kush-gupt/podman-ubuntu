@@ -105,8 +105,8 @@ jobs:
   publish:
     needs: [setup, smoke]
     runs-on: ubuntu-latest
-    environment:
     timeout-minutes: 60
+    environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
