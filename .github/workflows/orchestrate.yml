@@ -146,6 +146,10 @@ jobs:
 
   publish:
     needs: [setup, smoke]
+    # Explicit if: the smoke matrix needs to have succeeded. Without this,
+    # GitHub sometimes skips publish even when all smoke jobs succeed
+    # (matrix + if: interaction).
+    if: always() && needs.setup.result == 'success' && needs.smoke.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment:
