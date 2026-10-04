@@ -109,9 +109,16 @@ jobs:
         # build.yml); installs with apt so deps resolve in one step.
         # python3 isn't in the minimal ubuntu container image, so install
         # it first (install_debs.py itself also runs apt-get update).
+        # The published repo is a fallback source: incremental builds only
+        # produce artifacts for changed components, so unchanged packages
+        # (e.g. podman itself) resolve from the repo, not the artifacts.
         run: |
           apt-get update -qq
-          apt-get install -y -qq python3
+          apt-get install -y -qq python3 ca-certificates curl
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc -o /etc/apt/keyrings/podman-ubuntu.asc
+          chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
+          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" > /etc/apt/sources.list.d/podman-ubuntu.sources
           python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
       - run: |
           # Every binary in the stack reports a version. netavark and

@@ -33,8 +33,14 @@ def main():
     subprocess.run(["apt-get", "install", "-y", "-qq", "ca-certificates"],
                    check=True)
     # apt (not dpkg -i + install -f): resolves dependencies in one step.
+    # Local debs first (newly built), then ensure podman itself is present:
+    # incremental builds only produce artifacts for changed components, so
+    # unchanged packages resolve from the published repo (configured by the
+    # workflow) rather than the artifacts.
     subprocess.run(["apt-get", "install", "-y", "-qq"]
                    + [f"./{d}" for d in sorted(debs)], check=True)
+    subprocess.run(["apt-get", "install", "-y", "-qq", "podman"],
+                   check=True)
 
 
 if __name__ == "__main__":
