@@ -134,8 +134,14 @@ def main():
         for track in sorted(g["tracks"]):
             suite = f"{track}-{flat(ubuntu)}"
             for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
-                run("reprepro", "-b", aptd, "includedeb", suite, deb,
-                    capture_output=True)
+                r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
+                        check=False, capture_output=True, text=True)
+                if r.returncode != 0:
+                    print(f"reprepro includedeb {suite} {deb} failed "
+                          f"(exit {r.returncode})", flush=True)
+                    print("stdout:", r.stdout, flush=True)
+                    print("stderr:", r.stderr, flush=True)
+                    sys.exit(1)
         print(f"included {comp} {ver} (tracks:{sorted(g['tracks'])}, "
               f"Ubuntu {ubuntu}, {arch})", flush=True)
 
