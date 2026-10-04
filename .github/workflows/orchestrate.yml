@@ -80,7 +80,7 @@ jobs:
       extra: ${{ matrix.extra }}
 
   smoke:
-    needs: [setup, level1]
+    needs: [setup, level0, level1]
     timeout-minutes: 30
     strategy:
       fail-fast: false
