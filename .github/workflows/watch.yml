@@ -23,51 +23,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/check_releases.py
 
-      - name: Open update PR
+      - name: Push update branch
         if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: watch/${{ steps.check.outputs.stamp }}
           SUMMARY: ${{ steps.check.outputs.summary }}
         run: |
-          # Check for existing PR for this branch
-          COUNT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:${BRANCH//\//%2F}" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")
-          if [ "$COUNT" != "0" ]; then
-            echo "PR already open for $BRANCH, skipping."
-            exit 0
-          fi
+          # Push the branch; a separate cron creates the PR via API
+          # (GITHUB_TOKEN cannot create PRs in this repo's Actions context).
           git config user.name "podman-ubuntu-bot"
           git config user.email "podman-ubuntu-bot@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add versions.json ubuntu-versions.json
           git commit -m "chore(watch): $SUMMARY"
           git push -u origin "$BRANCH"
-          # Create PR via API
-          python3 << 'PYEOF'
-          import json, os, urllib.request
-          token = os.environ["GH_TOKEN"]
-          branch = os.environ["BRANCH"]
-          with open("/tmp/watch-pr-body.md") as f:
-              body = f.read()
-          payload = {
-              "title": "chore(watch): " + os.environ["SUMMARY"],
-              "head": branch,
-              "base": "main",
-              "body": body,
-          }
-          req = urllib.request.Request(
-              "https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls",
-              data=json.dumps(payload).encode(),
-              headers={
-                  "Authorization": f"Bearer {token}",
-                  "Accept": "application/vnd.github+json",
-                  "Content-Type": "application/json",
-              },
-              method="POST",
-          )
-          with urllib.request.urlopen(req, timeout=30) as resp:
-              pr = json.load(resp)
-          print(f"Created PR #{pr['number']}: {pr['html_url']}")
-          PYEOF
+          echo "Pushed $BRANCH; PR will be created by the watch-pr cron."
