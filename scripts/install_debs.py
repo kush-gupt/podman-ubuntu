@@ -40,7 +40,7 @@ def main():
     subprocess.run(["apt-get", "install", "-y", "-qq"]
                    + [f"./{d}" for d in sorted(debs)], check=True)
     subprocess.run(["apt-get", "install", "-y", "-qq",
-                    "podman", "passt", "conmon", "crun"],
+                    "podman", "passt", "conmon", "crun", "aardvark-dns"],
                    check=True)
 
 
