@@ -18,6 +18,18 @@ on:
       - "packaging/**"
       - "scripts/**"
       - ".github/workflows/orchestrate.yml"
+  # PRs run the same build+smoke matrix against themselves so packaging
+  # changes are validated before merge. The publish job is gated to pushes
+  # below: PRs never touch the apt-repo branch, Pages, or main's manifest.
+  pull_request:
+    branches: [main]
+    paths:
+      - "versions.json"
+      - "components.json"
+      - "ubuntu-versions.json"
+      - "packaging/**"
+      - "scripts/**"
+      - ".github/workflows/orchestrate.yml"
   workflow_dispatch:
     inputs:
       force_rebuild:
@@ -81,6 +93,10 @@ jobs:
 
   smoke:
     needs: [setup, level1]
+    # Nothing built (e.g. a scripts-only change with unchanged packaging
+    # inputs) means nothing to smoke-test; skip instead of failing on an
+    # empty install.
+    if: needs.setup.outputs.level0 != '[]' || needs.setup.outputs.level1 != '[]'
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -121,6 +137,10 @@ jobs:
 
   publish:
     needs: [setup, smoke]
+    # Publishing mutates the apt-repo branch, the Pages deployment, and
+    # main's manifest: only pushes to main may do that, and only when the
+    # matrix actually built something. PR runs stop after smoke.
+    if: github.event_name == 'push' && (needs.setup.outputs.level0 != '[]' || needs.setup.outputs.level1 != '[]')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment:
