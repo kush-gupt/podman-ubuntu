@@ -136,6 +136,16 @@ def main():
             for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
                 r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
                         check=False, capture_output=True, text=True)
+                if r.returncode != 0 and "can only be included again" in r.stderr:
+                    # Rebuilt deb with same version but different bytes
+                    # (packaging changed). Remove the stale entry, then include.
+                    pkg = run("dpkg-deb", "-f", deb, "Package",
+                              capture_output=True, text=True).stdout.strip()
+                    print(f"replacing stale {pkg} in {suite}", flush=True)
+                    run("reprepro", "-b", aptd, "remove", suite, pkg,
+                        capture_output=True)
+                    r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
+                            check=False, capture_output=True, text=True)
                 if r.returncode != 0:
                     print(f"reprepro includedeb {suite} {deb} failed "
                           f"(exit {r.returncode})", flush=True)
