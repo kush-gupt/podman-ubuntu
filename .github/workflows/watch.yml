@@ -29,7 +29,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="watch/${{ steps.check.outputs.stamp }}"
-          if gh pr list --head "$BRANCH" --state open --json number -q '.[0].number' | grep -q .; then
+          # Check for existing open PR via API (gh pr create is flaky in Actions;
+          # use the REST API directly for reliability).
+          EXISTING=$(python3 -c "
+          import json, os, urllib.request
+          token = os.environ['GH_TOKEN']
+          req = urllib.request.Request(
+              'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:' + '$BRANCH'.replace('/', '%2F'),
+              headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              prs = json.load(r)
+          print(len(prs))
+          ")
+          if [ "$EXISTING" != "0" ]; then
             echo "PR already open for $BRANCH, skipping duplicate."
             exit 0
           fi
@@ -39,6 +51,23 @@ jobs:
           git add versions.json ubuntu-versions.json
           git commit -m "chore(watch): ${{ steps.check.outputs.summary }}"
           git push -u origin "$BRANCH"
-          gh pr create \
-            --title "chore(watch): ${{ steps.check.outputs.summary }}" \
-            --body-file /tmp/watch-pr-body.md
+          python3 -c "
+          import json, os, urllib.request
+          token = os.environ['GH_TOKEN']
+          body = open('/tmp/watch-pr-body.md').read()
+          data = json.dumps({
+              'title': 'chore(watch): ' + '''${{ steps.check.outputs.summary }}''',
+              'head': '$BRANCH',
+              'base': 'main',
+              'body': body,
+          }).encode()
+          req = urllib.request.Request(
+              'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls',
+              data=data, method='POST',
+              headers={'Authorization': f'Bearer {token}',
+                       'Accept': 'application/vnd.github+json',
+                       'Content-Type': 'application/json'})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              pr = json.load(r)
+          print('Created PR #' + str(pr['number']) + ': ' + pr['html_url'])
+          "
