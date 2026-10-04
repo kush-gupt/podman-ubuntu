@@ -18,3 +18,4 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${netavark:firewall}, aardvark-dns
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.
+# Force rebuild for smoke pinning test
