@@ -131,27 +131,38 @@ def main():
         g["tracks"].add(m["track"])
     for (comp, ver, ubuntu, arch) in sorted(groups):
         g = groups[(comp, ver, ubuntu, arch)]
-        for track in sorted(g["tracks"]):
-            suite = f"{track}-{flat(ubuntu)}"
-            for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
-                r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
-                        check=False, capture_output=True, text=True)
-                if r.returncode != 0 and "can only be included again" in r.stderr:
-                    # Rebuilt deb with same version but different bytes
-                    # (packaging changed). Remove the stale entry, then include.
-                    pkg = run("dpkg-deb", "-f", deb, "Package",
-                              capture_output=True, text=True).stdout.strip()
-                    print(f"replacing stale {pkg} in {suite}", flush=True)
-                    run("reprepro", "-b", aptd, "remove", suite, pkg,
-                        capture_output=True)
-                    r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
+        suites = [f"{track}-{flat(ubuntu)}" for track in sorted(g["tracks"])]
+        for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
+            pkg = run("dpkg-deb", "-f", deb, "Package",
+                      capture_output=True, text=True).stdout.strip()
+            # Rebuilt deb with same version but different bytes (packaging
+            # changed): reprepro's pool is shared across suites, so remove
+            # the stale entry from every suite before including the new one.
+            r = run("reprepro", "-b", aptd, "includedeb", suites[0], deb,
+                    check=False, capture_output=True, text=True)
+            if r.returncode != 0 and "can only be included again" in r.stderr:
+                print(f"replacing stale {pkg} in {suites}", flush=True)
+                for s in suites:
+                    run("reprepro", "-b", aptd, "remove", s, pkg,
+                        check=False, capture_output=True)
+                for s in suites:
+                    r = run("reprepro", "-b", aptd, "includedeb", s, deb,
                             check=False, capture_output=True, text=True)
-                if r.returncode != 0:
-                    print(f"reprepro includedeb {suite} {deb} failed "
-                          f"(exit {r.returncode})", flush=True)
-                    print("stdout:", r.stdout, flush=True)
-                    print("stderr:", r.stderr, flush=True)
-                    sys.exit(1)
+                    if r.returncode != 0:
+                        break
+            else:
+                # First suite succeeded; include into the rest.
+                for s in suites[1:]:
+                    r = run("reprepro", "-b", aptd, "includedeb", s, deb,
+                            check=False, capture_output=True, text=True)
+                    if r.returncode != 0:
+                        break
+            if r.returncode != 0:
+                print(f"reprepro includedeb {deb} failed "
+                      f"(exit {r.returncode})", flush=True)
+                print("stdout:", r.stdout, flush=True)
+                print("stderr:", r.stderr, flush=True)
+                sys.exit(1)
         print(f"included {comp} {ver} (tracks:{sorted(g['tracks'])}, "
               f"Ubuntu {ubuntu}, {arch})", flush=True)
 
