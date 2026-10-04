@@ -81,6 +81,13 @@ jobs:
 
   smoke:
     needs: [setup, level0, level1]
+    # Run if either build level produced artifacts (level1 is skipped when
+    # only level0 components rebuilt, but we still need to smoke-test and
+    # publish those).
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      (needs.level0.result == 'success' || needs.level1.result == 'success')
     timeout-minutes: 30
     strategy:
       fail-fast: false
