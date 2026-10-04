@@ -52,6 +52,8 @@ jobs:
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
