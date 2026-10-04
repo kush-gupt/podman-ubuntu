@@ -52,11 +52,6 @@ jobs:
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          # On PRs, check out the head SHA directly: refs/pull/N/merge can go
-          # stale when the branch is updated via the API, causing CI to test
-          # old files. The branch is rebased on main, so head == merge result.
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
