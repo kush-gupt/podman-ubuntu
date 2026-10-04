@@ -1,5 +1,5 @@
 {
-  "_note": "Build manifest: component -> podman-version -> true once published. Updated by the publish job. Excluded from the orchestrate trigger paths.",
+  "_note": "Build manifest: (component, version) -> {packaging_sha} once published. packaging_sha covers the component's packaging dir, packaging/common, and scripts/prepare-source.sh; a packaging-only change alters it and triggers a rebuild even when the upstream version is unchanged. Updated by the publish job. Excluded from the orchestrate trigger paths.",
   "built": {
     "podman": {
       "5.8.7": {

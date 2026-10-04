@@ -1,4 +1,6 @@
 #!/usr/bin/make -f
 # Meta-package: no upstream source, nothing to compile.
+include debian/common/rules.mk
+
 %:
 	dh $@

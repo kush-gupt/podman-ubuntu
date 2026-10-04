@@ -163,6 +163,11 @@ EOF
   chmod +x "$workdir/debian/rules"
 fi
 
+# Shared debhelper snippets included by each component's debian/rules
+# (packaging/common/). Copied here so the source tree is self-contained;
+# sbuild runs debian/rules with the source root as cwd.
+cp -r "$REPO_ROOT/packaging/common" "$workdir/debian/common"
+
 # Stamp the changelog for this exact version and target suite (no-op if
 # already correct). The suite is the Ubuntu codename so lintian and
 # reprepro see a real distribution, not "unstable".

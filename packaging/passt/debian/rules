@@ -1,4 +1,6 @@
 #!/usr/bin/make -f
+include debian/common/rules.mk
+
 %:
 	dh $@
 
@@ -7,8 +9,3 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	$(MAKE) prefix=/usr DESTDIR=debian/passt install
-
-# Skip dbgsym generation (not needed for our APT repo; avoids lintian
-# skipping .changes when the .ddeb is missing).
-override_dh_strip:
-	dh_strip --no-automatic-dbgsym

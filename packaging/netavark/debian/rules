@@ -1,11 +1,8 @@
 #!/usr/bin/make -f
 # Crate sources are vendored by scripts/prepare-source.sh (cargo vendor);
 # the sbuild itself runs fully offline.
-export CARGO_NET_OFFLINE := true
-# The Actions runner overrides HOME but the rustup toolchain lives under
-# /root in the builder image; point rustup back explicitly.
-export RUSTUP_HOME ?= /root/.rustup
-export CARGO_HOME ?= /root/.cargo
+include debian/common/rust.mk
+include debian/common/rules.mk
 
 %:
 	dh $@
@@ -21,15 +18,3 @@ override_dh_auto_install:
 FIREWALL_BACKEND := $(shell dpkg-parsechangelog -S Version 2>/dev/null | grep -q '^1\.' && echo iptables || echo nftables)
 override_dh_gencontrol:
 	dh_gencontrol -- -Vnetavark:firewall=$(FIREWALL_BACKEND)
-
-# dh_clean deletes *.orig recursively, but cargo's vendored .orig files are
-# required for the offline build. Stash vendor outside the tree during clean.
-override_dh_clean:
-	if [ -d vendor ]; then mv vendor ../vendor.stash; fi
-	dh_clean || true
-	if [ -d ../vendor.stash ]; then mv ../vendor.stash vendor; fi
-
-# Skip dbgsym generation (not needed for our APT repo; avoids lintian
-# skipping .changes when the .ddeb is missing).
-override_dh_strip:
-	dh_strip --no-automatic-dbgsym

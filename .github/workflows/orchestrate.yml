@@ -16,10 +16,7 @@ on:
       - "components.json"
       - "ubuntu-versions.json"
       - "packaging/**"
-      - "scripts/prepare-source.sh"
-      - "scripts/publish-repo.sh"
-      - "scripts/build_matrix.py"
-      - "scripts/is_built.py"
+      - "scripts/**"
       - ".github/workflows/orchestrate.yml"
   workflow_dispatch:
     inputs:
@@ -95,21 +92,16 @@ jobs:
       image: ubuntu:${{ matrix.ubuntu_version }}
       options: --privileged
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v7
         with:
           pattern: debs-*
           path: debs
+      - name: Install this cell's debs
+        # Selects artifacts via their meta.json sidecars (written by
+        # build.yml); installs with apt so deps resolve in one step.
+        run: python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
       - run: |
-          apt-get update -qq
-          # CA certs: the minimal ubuntu container image can't verify
-          # registry TLS without them, which breaks image pulls.
-          apt-get install -y -qq ca-certificates
-          # Install debs for this Ubuntu version, track, and amd64 arch
-          # (artifact dirs look like debs-conmon-2.1.13-v5-u24.04-amd64).
-          UVER="${{ matrix.ubuntu_version }}"
-          TRACK="${{ matrix.track }}"
-          find "debs" -path "*${TRACK}-u${UVER}-amd64*" -name '*.deb' -exec dpkg -i {} + || true
-          apt-get install -f -y -qq
           # Every binary in the stack reports a version. netavark and
           # aardvark-dns live in libexec, not PATH.
           podman --version
@@ -125,7 +117,7 @@ jobs:
           # because cgroup v2 controller delegation does not work inside
           # GitHub's nested job containers (not a packaging issue).
           podman --storage-driver=vfs info --format '{{.Host.Arch}} {{.Version.Version}}'
-          podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from podman ${TRACK}"
+          podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from podman ${{ matrix.track }}"
 
   publish:
     needs: [setup, smoke]
@@ -148,7 +140,7 @@ jobs:
         env:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
           TRACKS: ${{ join(fromJSON(needs.setup.outputs.suites).tracks, ',') }}
-        run: bash scripts/publish-repo.sh
+        run: python3 scripts/publish_repo.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apt-repo-publish
