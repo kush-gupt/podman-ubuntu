@@ -29,13 +29,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="watch/${{ steps.check.outputs.stamp }}"
+          export WATCH_BRANCH="$BRANCH"
           # Check for existing open PR via API (gh pr create is flaky in Actions;
           # use the REST API directly for reliability).
           EXISTING=$(python3 -c "
           import json, os, urllib.request
           token = os.environ['GH_TOKEN']
+          branch = os.environ['WATCH_BRANCH']
+          q = branch.replace('/', '%2F')
           req = urllib.request.Request(
-              'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:' + '$BRANCH'.replace('/', '%2F'),
+              f'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:{q}',
               headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'})
           with urllib.request.urlopen(req, timeout=30) as r:
               prs = json.load(r)
@@ -54,10 +57,11 @@ jobs:
           python3 -c "
           import json, os, urllib.request
           token = os.environ['GH_TOKEN']
+          branch = os.environ['WATCH_BRANCH']
           body = open('/tmp/watch-pr-body.md').read()
           data = json.dumps({
-              'title': 'chore(watch): ' + '''${{ steps.check.outputs.summary }}''',
-              'head': '$BRANCH',
+              'title': 'chore(watch): ${{ steps.check.outputs.summary }}',
+              'head': branch,
               'base': 'main',
               'body': body,
           }).encode()
