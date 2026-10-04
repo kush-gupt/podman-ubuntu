@@ -2,6 +2,8 @@
 # Install the canonical default config files by explicit path. A blind
 # `find` picks up test fixtures (e.g. libimage/testdata/containers.conf)
 # that share basenames with the real files.
+include debian/common/rules.mk
+
 %:
 	dh $@
 
@@ -27,8 +29,3 @@ override_dh_auto_install:
 	# is the sane default (docker.io, quay.io search registries).
 	install -D -m0644 tests/registries.conf \
 		debian/containers-common/etc/containers/registries.conf
-
-# Skip dbgsym generation (not needed for our APT repo; avoids lintian
-# skipping .changes when the .ddeb is missing).
-override_dh_strip:
-	dh_strip --no-automatic-dbgsym

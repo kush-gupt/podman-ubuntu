@@ -21,20 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - id: set
+        # Suite list comes from the shared matrix script, so the supported
+        # Ubuntu releases are defined in exactly one place.
         run: |
-          MATRIX=$(python3 -c "
-          import json
-          releases = json.load(open('ubuntu-versions.json'))['releases']
-          print(json.dumps({'ubuntu_version': releases}))
-          ")
-          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(python3 scripts/build_matrix.py --suites)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: setup
     strategy:
       fail-fast: false
       matrix:
-        ubuntu_version: ${{ fromJSON(needs.setup.outputs.matrix).ubuntu_version }}
+        ubuntu_version: ${{ fromJSON(needs.setup.outputs.matrix).ubuntu }}
         arch: [amd64, arm64]
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     steps:

@@ -122,6 +122,25 @@ jobs:
           mv build/src/*.deb build/src/*.buildinfo build/src/*.changes \
             build/artifacts/
 
+      - name: Write artifact metadata sidecar
+        if: steps.skipcheck.outputs.skipped != 'true'
+        env:
+          COMPONENT: ${{ inputs.component }}
+          VERSION: ${{ inputs.version }}
+          TRACK: ${{ inputs.track }}
+          UBUNTU_VERSION: ${{ inputs.ubuntu_version }}
+          ARCH: ${{ inputs.arch }}
+        run: |
+          # meta.json lets downstream jobs (smoke, publish) select artifacts
+          # by structured fields instead of parsing directory names.
+          python3 -c "
+          import json, os
+          meta = {k.lower(): os.environ[k] for k in
+                  ('COMPONENT', 'VERSION', 'TRACK', 'UBUNTU_VERSION', 'ARCH')}
+          meta['ubuntu'] = meta.pop('ubuntu_version')
+          json.dump(meta, open('build/artifacts/meta.json', 'w'), indent=2)
+          "
+
       - name: Lintian gate
         if: steps.skipcheck.outputs.skipped != 'true'
         run: |
@@ -140,4 +159,5 @@ jobs:
             build/artifacts/*.dsc
             build/artifacts/*.buildinfo
             build/artifacts/*.changes
+            build/artifacts/meta.json
           retention-days: 7
