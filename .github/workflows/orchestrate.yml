@@ -52,17 +52,10 @@ jobs:
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
           FORCE_REBUILD: ${{ inputs.force_rebuild || 'false' }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: matrix-debug
-          path: /tmp/matrix_debug.txt
 
   level0:
     needs: setup
