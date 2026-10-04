@@ -1,1 +1,8 @@
-{"_note":"Source of truth for supported Ubuntu releases. Updated by the watch workflow from endoflife.date; never hand-edit the list, open a PR via the watcher instead.","releases":["22.04","24.04","26.04"]}
+{
+  "_note": "Source of truth for supported Ubuntu releases. Updated by the watch workflow from endoflife.date; never hand-edit the list, open a PR via the watcher instead.",
+  "releases": [
+    "22.04",
+    "24.04",
+    "26.04"
+  ]
+}
