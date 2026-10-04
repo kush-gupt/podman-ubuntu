@@ -70,14 +70,14 @@ Version: 2.1.0-1~noble
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 10836
-Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2), nftables
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2), nftables, aardvark-dns
 Priority: optional
 Section: admin
 Filename: pool/main/n/netavark/netavark_2.1.0-1~noble_amd64.deb
 Size: 3235984
-SHA256: 87adee21d87008af7887777589b61545d9dac9262c961e99b1e7a686c1633711
-SHA1: 184cfb3df6584db1c9e9de0dd26eb082794c9eb7
-MD5sum: 7d9b7a90ce641a18c396dbf6ceed4da4
+SHA256: 3930b6bbf1419ff84a1bb09d56d562d7a9ae483c9c7b28c2093b0eee270cadd0
+SHA1: f5b4049f740cd4d557883297d5cf32c6f60cdf8c
+MD5sum: aa6e418439479fe7ed6379cee936dc95
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.

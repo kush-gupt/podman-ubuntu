@@ -70,14 +70,14 @@ Version: 1.16.0-1~jammy
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 13652
-Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2), iptables
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2), iptables, aardvark-dns
 Priority: optional
 Section: admin
 Filename: pool/main/n/netavark/netavark_1.16.0-1~jammy_amd64.deb
-Size: 3808184
-SHA256: f50550be147dc7f7785e0eb3122e6879b8f43cf5a10c4607bc4e922545be4774
-SHA1: f5a721e9af6d2257a511a7093535995869fb3bbe
-MD5sum: 088448fa278da2dff2e318336e56c5dd
+Size: 3808098
+SHA256: 70781a477f3924833a9cc7738d0d92c1a3d751263e6153019fa11d6e28b7666c
+SHA1: 9105e9717d68d0990f526c66a7fc237d99083966
+MD5sum: 6bfef37f903499605efd59c1e17a2a8d
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.
