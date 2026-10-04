@@ -87,6 +87,14 @@ def main():
                 f.write(f"{name}={json.dumps(value)}\n")
     print(f"level0 cells: {len(levels['level0'])}, "
           f"level1 cells: {len(levels['level1'])}", file=sys.stderr)
+    # DEBUG: write detailed info to file for artifact upload
+    with open("/tmp/matrix_debug.txt", "w") as df:
+        df.write(f"vers={vers}\n")
+        df.write(f"pins_keys={sorted(pins.keys())}\n")
+        df.write(f"manifest_podman={sorted(manifest.get('podman', {}).keys())}\n")
+        df.write(f"is_built_6_1_3={lib.is_built('podman', '6.1.3', manifest)}\n")
+        df.write(f"level0_count={len(levels['level0'])}\n")
+        df.write(f"level1_count={len(levels['level1'])}\n")
     return 0
 
 
