@@ -27,51 +27,47 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: watch/${{ steps.check.outputs.stamp }}
+          SUMMARY: ${{ steps.check.outputs.summary }}
         run: |
-          BRANCH="watch/${{ steps.check.outputs.stamp }}"
-          export WATCH_BRANCH="$BRANCH"
-          # Check for existing open PR via API (gh pr create is flaky in Actions;
-          # use the REST API directly for reliability).
-          EXISTING=$(python3 -c "
-          import json, os, urllib.request
-          token = os.environ['GH_TOKEN']
-          branch = os.environ['WATCH_BRANCH']
-          q = branch.replace('/', '%2F')
-          req = urllib.request.Request(
-              f'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:{q}',
-              headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'})
-          with urllib.request.urlopen(req, timeout=30) as r:
-              prs = json.load(r)
-          print(len(prs))
-          ")
-          if [ "$EXISTING" != "0" ]; then
-            echo "PR already open for $BRANCH, skipping duplicate."
+          # Check for existing PR for this branch
+          COUNT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls?state=open&head=kush-gupt:${BRANCH//\//%2F}" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")
+          if [ "$COUNT" != "0" ]; then
+            echo "PR already open for $BRANCH, skipping."
             exit 0
           fi
           git config user.name "podman-ubuntu-bot"
           git config user.email "podman-ubuntu-bot@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add versions.json ubuntu-versions.json
-          git commit -m "chore(watch): ${{ steps.check.outputs.summary }}"
+          git commit -m "chore(watch): $SUMMARY"
           git push -u origin "$BRANCH"
-          python3 -c "
+          # Create PR via API
+          python3 << 'PYEOF'
           import json, os, urllib.request
-          token = os.environ['GH_TOKEN']
-          branch = os.environ['WATCH_BRANCH']
-          body = open('/tmp/watch-pr-body.md').read()
-          data = json.dumps({
-              'title': 'chore(watch): ${{ steps.check.outputs.summary }}',
-              'head': branch,
-              'base': 'main',
-              'body': body,
-          }).encode()
+          token = os.environ["GH_TOKEN"]
+          branch = os.environ["BRANCH"]
+          with open("/tmp/watch-pr-body.md") as f:
+              body = f.read()
+          payload = {
+              "title": "chore(watch): " + os.environ["SUMMARY"],
+              "head": branch,
+              "base": "main",
+              "body": body,
+          }
           req = urllib.request.Request(
-              'https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls',
-              data=data, method='POST',
-              headers={'Authorization': f'Bearer {token}',
-                       'Accept': 'application/vnd.github+json',
-                       'Content-Type': 'application/json'})
-          with urllib.request.urlopen(req, timeout=30) as r:
-              pr = json.load(r)
-          print('Created PR #' + str(pr['number']) + ': ' + pr['html_url'])
-          "
+              "https://api.github.com/repos/kush-gupt/podman-ubuntu/pulls",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              pr = json.load(resp)
+          print(f"Created PR #{pr['number']}: {pr['html_url']}")
+          PYEOF
