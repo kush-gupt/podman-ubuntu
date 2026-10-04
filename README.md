@@ -10,10 +10,13 @@ This project is not affiliated with the Podman project or Canonical.
 ## Install
 
 ```sh
-# Trust the repository signing key
+# Trust the repository signing key (world-readable: apt verifies signatures
+# as an unprivileged sandbox user, so a restrictive root umask would break
+# verification with a cryptic "Unknown error executing apt-key")
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc \
   | sudo tee /etc/apt/keyrings/podman-ubuntu.asc > /dev/null
+sudo chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
 
 # Add the repository (pick the suite matching your Ubuntu version and track)
 UBUNTU=$(lsb_release -rs | tr -d .)

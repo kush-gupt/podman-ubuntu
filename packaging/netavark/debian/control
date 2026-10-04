@@ -12,7 +12,9 @@ Package: netavark
 Architecture: any
 # The firewall backend is version-dependent (see debian/rules): 1.x shells
 # out to iptables, 2.x to nftables. ${netavark:firewall} is set accordingly.
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${netavark:firewall}
+# aardvark-dns is netavark's DNS server: without it containers get no name
+# resolution.
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${netavark:firewall}, aardvark-dns
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.
