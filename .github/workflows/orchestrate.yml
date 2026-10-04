@@ -121,6 +121,10 @@ jobs:
           # Suite names omit the dot: v5-2404, not v5-24.04.
           SUITE="${{ matrix.track }}-$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
           printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$SUITE" > /etc/apt/sources.list.d/podman-ubuntu.sources
+          # Pin our repo above Ubuntu's: Ubuntu 26.04 ships aardvark-dns
+          # 1.16.0-3 which outranks our 1.16.0-1~resolute (the ~ sorts lower),
+          # but Ubuntu's installs to a different path. Prefer ours.
+          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 900\n' > /etc/apt/preferences.d/podman-ubuntu
           python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
       - run: |
           # Every binary in the stack reports a version. netavark and
