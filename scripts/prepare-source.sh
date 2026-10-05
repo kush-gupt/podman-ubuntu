@@ -44,7 +44,15 @@ TARBALL=""
 SUBDIR=""
 KIND=""
 case "$COMPONENT" in
-  podman)          TARBALL="https://github.com/containers/podman/archive/refs/tags/v${VERSION}.tar.gz"; KIND=go ;;
+  podman)
+    if [[ "$EXTRA" =~ ^[0-9a-f]{40}$ ]]; then
+      # Nightly git snapshot: no v${VERSION} tag exists, so fetch the
+      # commit archive instead of the tag archive.
+      TARBALL="https://github.com/containers/podman/archive/${EXTRA}.tar.gz"
+    else
+      TARBALL="https://github.com/containers/podman/archive/refs/tags/v${VERSION}.tar.gz"
+    fi
+    KIND=go ;;
   crun)
     # Release tarball (not the auto-generated GitHub archive): it bundles
     # the libocispec submodule, which the auto archive omits.

@@ -18,18 +18,21 @@ jobs:
     outputs:
       version: ${{ steps.ver.outputs.version }}
       matrix: ${{ steps.ver.outputs.matrix }}
+      sha: ${{ steps.ver.outputs.sha }}
     steps:
       - uses: actions/checkout@v7
       - id: ver
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SHA=$(gh api repos/containers/podman/commits/main --jq '.sha[0:7]')
+          FULL_SHA=$(gh api repos/containers/podman/commits/main --jq '.sha')
+          SHA="${FULL_SHA:0:7}"
           DATE=$(date -u +%Y%m%d)
           BASE=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
           MAJOR="${BASE%%.*}"
           VERSION="$((MAJOR + 1)).0.0~git${DATE}.${SHA}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha=$FULL_SHA" >> "$GITHUB_OUTPUT"
           MATRIX=$(python3 -c "
           import json
           releases = json.load(open('ubuntu-versions.json'))['releases']
@@ -51,6 +54,7 @@ jobs:
       ubuntu_version: ${{ matrix.ubuntu_version }}
       arch: ${{ matrix.arch }}
       track: nightly
+      extra: ${{ needs.setup.outputs.sha }}
 
   publish:
     needs: [setup, build]
