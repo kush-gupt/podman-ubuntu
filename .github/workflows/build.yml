@@ -35,7 +35,7 @@ jobs:
     outputs:
       skipped: ${{ steps.skipcheck.outputs.skipped }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Skip if already published
         id: skipcheck
@@ -65,7 +65,7 @@ jobs:
 
       - name: Restore cargo registry cache
         if: steps.skipcheck.outputs.skipped != 'true' && (inputs.component == 'netavark' || inputs.component == 'aardvark-dns')
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           # Relative paths resolve against the host-side workspace, which is
           # the same bind mount the container wrote to above.
@@ -79,7 +79,7 @@ jobs:
 
       - name: Restore Go module and build caches
         if: steps.skipcheck.outputs.skipped != 'true' && inputs.component == 'podman'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             .ci-cache/gomod
