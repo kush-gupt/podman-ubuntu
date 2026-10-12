@@ -90,27 +90,50 @@ def main():
                  if l.startswith("sub:"))
 
     # --- conf/distributions ----------------------------------------------
-    dists = []
+    # Additive: keep suites other tracks published (a nightly-only run must
+    # not strip stable/v5 from the shared apt-repo branch); (over)write the
+    # stanzas for this run's tracks.
+    def stanza(track, uv):
+        suite = f"{track}-{flat(uv)}"
+        return (
+            f"Origin: podman-ubuntu\n"
+            f"Label: podman-ubuntu\n"
+            f"Codename: {suite}\n"
+            f"Suite: {suite}\n"
+            f"Architectures: amd64 arm64\n"
+            f"Components: main\n"
+            f"Description: podman-ubuntu {track} track for Ubuntu {uv}\n"
+            f"SignWith: {keyid}\n")
+
+    dist_path = os.path.join(aptd, "conf", "distributions")
+    existing = {}
+    if os.path.exists(dist_path):
+        # Split into stanzas on blank lines, keyed by Codename.
+        cur, codename = [], None
+        for line in open(dist_path).read().splitlines() + [""]:
+            if not line.strip():
+                if cur and codename:
+                    existing[codename] = "\n".join(cur) + "\n"
+                cur, codename = [], None
+                continue
+            cur.append(line)
+            if line.startswith("Codename:"):
+                codename = line.split(":", 1)[1].strip()
+        if cur and codename:
+            existing[codename] = "\n".join(cur) + "\n"
     for track in tracks:
         for uv in ubuntus:
-            suite = f"{track}-{flat(uv)}"
-            dists.append(
-                f"Origin: podman-ubuntu\n"
-                f"Label: podman-ubuntu\n"
-                f"Codename: {suite}\n"
-                f"Suite: {suite}\n"
-                f"Architectures: amd64 arm64\n"
-                f"Components: main\n"
-                f"Description: podman-ubuntu {track} track for Ubuntu {uv}\n"
-                f"SignWith: {keyid}\n")
-    with open(os.path.join(aptd, "conf", "distributions"), "w") as f:
-        f.write("\n".join(dists) + "\n")
+            existing[f"{track}-{flat(uv)}"] = stanza(track, uv)
+    with open(dist_path, "w") as f:
+        f.write("\n".join(existing[c] for c in sorted(existing)) + "\n")
     with open(os.path.join(aptd, "conf", "options"), "w") as f:
         f.write("verbose\n")
     # Drop db entries for suites no longer in conf/distributions (e.g. after
     # a suite rename); otherwise includedeb fails with "unused database".
-    run("reprepro", "-b", aptd, "clearvanished", capture_output=True,
-        check=False)
+    cv = run("reprepro", "-b", aptd, "clearvanished", capture_output=True,
+             text=True, check=False)
+    print(cv.stdout, flush=True)
+    print(cv.stderr, flush=True)
 
     # --- include debs ------------------------------------------------------
     # Artifacts download to debs/debs-*/ (actions/download-artifact nests each
@@ -138,8 +161,14 @@ def main():
         for track in sorted(g["tracks"]):
             suite = f"{track}-{flat(ubuntu)}"
             for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
-                run("reprepro", "-b", aptd, "includedeb", suite, deb,
-                    capture_output=True)
+                r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
+                        capture_output=True, text=True, check=False)
+                if r.returncode != 0:
+                    print(f"includedeb {suite} {deb} failed:",
+                          flush=True)
+                    print(r.stdout, flush=True)
+                    print(r.stderr, flush=True)
+                    sys.exit(1)
         print(f"included {comp} {ver} (tracks:{sorted(g['tracks'])}, "
               f"Ubuntu {ubuntu}, {arch})", flush=True)
 
