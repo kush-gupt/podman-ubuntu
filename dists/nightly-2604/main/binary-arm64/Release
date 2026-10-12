@@ -1,0 +1,6 @@
+Archive: nightly-2604
+Component: main
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Architecture: arm64
+Description: podman-ubuntu nightly track for Ubuntu 26.04

@@ -1,5 +1,32 @@
 Origin: podman-ubuntu
 Label: podman-ubuntu
+Codename: nightly-2204
+Suite: nightly-2204
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu nightly track for Ubuntu 22.04
+SignWith: 7CE75EB1AAB75813
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Codename: nightly-2404
+Suite: nightly-2404
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu nightly track for Ubuntu 24.04
+SignWith: 7CE75EB1AAB75813
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Codename: nightly-2604
+Suite: nightly-2604
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu nightly track for Ubuntu 26.04
+SignWith: 7CE75EB1AAB75813
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
 Codename: stable-2204
 Suite: stable-2204
 Architectures: amd64 arm64
