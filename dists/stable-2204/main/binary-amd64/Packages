@@ -1,37 +1,3 @@
-Package: aardvark-dns
-Version: 2.1.0-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 2566
-Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
-Priority: optional
-Section: admin
-Filename: pool/main/a/aardvark-dns/aardvark-dns_2.1.0-1~jammy_amd64.deb
-Size: 856590
-SHA256: 3602270d5dc99a18e5e8a3aaec6aac1decfc7da60c99a564af60e117c5b61276
-SHA1: 4f3d10926faf5c445960984f843cb477c3b796d9
-MD5sum: cafa0983f5a1a5326947d39c46c4ed73
-Description: DNS server for container networks
- Aardvark-dns provides DNS resolution for Netavark-managed container
- networks. Required by Podman 6.
-
-Package: conmon
-Version: 2.2.1-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 171
-Depends: libc6 (>= 2.34), libglib2.0-0 (>= 2.35.8), libsystemd0
-Priority: optional
-Section: admin
-Filename: pool/main/c/conmon/conmon_2.2.1-1~jammy_amd64.deb
-Size: 37234
-SHA256: 01a61ba1700e90e35a5d72e173ab2046f7856f05cabc4e446e67cd55d4434daf
-SHA1: f533fdd688876dad3390f7768fc4e4aafb63e69e
-MD5sum: 3884aae0f129ee27c0fffdabf5072fa0
-Description: OCI container runtime monitor
- conmon is the container monitor used by Podman and CRI-O: it watches the
- primary process of the container, handles logging, and reports the exit code.
-
 Package: containers-common
 Version: 0.69.2-1~jammy
 Architecture: all
@@ -40,102 +6,27 @@ Installed-Size: 67
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.69.2-1~jammy_all.deb
-Size: 16718
-SHA256: 0585c2a281907e1f38c1c235e78b83aee57cf2b04acb6226b560b2af63fa8e27
-SHA1: 01856de4bbee913f0e22d94ae500f8a2237be2c6
-MD5sum: 2761fce0af8a92587b3ed574d75a3663
+Size: 16714
+SHA256: 4ff328d22533cb1078948a39e8d6aa7a1939d3719004487627c849d3bd5f693d
+SHA1: 16a6eaca557b1c68a2e9b95a3a3ca5e37c720557
+MD5sum: 9fe4f02af4d46bdd37a2d538ae5ffe67
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
 
-Package: crun
-Version: 1.30.1-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 2150
-Depends: libc6 (>= 2.34), libcap2 (>= 1:2.10), libjson-c5 (>= 0.15), libseccomp2 (>= 2.3.0), libsystemd0 (>= 246)
-Priority: optional
-Section: admin
-Filename: pool/main/c/crun/crun_1.30.1-1~jammy_amd64.deb
-Size: 504472
-SHA256: 845eb9acc1223c6ed18b776e64c39fd8c4025652f6104b308aac172e41d68358
-SHA1: b948d29612b6c03bb4f5e91e197de0f80136aef8
-MD5sum: 4e04aad4402c2dc3d065911c0091e5db
-Description: fast and lightweight OCI runtime written in C
- crun is a fast and low-memory-footprint OCI container runtime, fully
- written in C. It is the default runtime used by the podman-ubuntu stack.
-
-Package: netavark
-Version: 2.1.0-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 11013
-Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2), nftables, aardvark-dns
-Priority: optional
-Section: admin
-Filename: pool/main/n/netavark/netavark_2.1.0-1~jammy_amd64.deb
-Size: 3268662
-SHA256: 8bba1688cca7053e8f7d8daa4541a33825970f66d52c52f688cb5d1748b6b3a3
-SHA1: d90c02f7a24872d115e87ad264021febfc75b3a7
-MD5sum: c43f0be2a83a51f735bd654e7c5d6d55
-Description: OCI container network stack
- Netavark is the container network stack used by Podman 4.4 and newer,
- replacing CNI. Required by Podman 6.
-
-Package: passt
-Version: 20260925-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 921
-Depends: libc6 (>= 2.34)
-Priority: optional
-Section: admin
-Filename: pool/main/p/passt/passt_20260925-1~jammy_amd64.deb
-Size: 367106
-SHA256: 058774b8400b84ab55ba88d38ac1b1422c6573501f43bdddd263b82bef6d6691
-SHA1: 9bd3a427e18c0542d226e1b83bf0830c3e10619e
-MD5sum: dfaa5be70a9e3660f7a12c7961a7df41
-Description: user-mode networking daemons for rootless containers
- passt and pasta provide user-mode networking for rootless containers and
- virtual machines. pasta is the default rootless networking backend for
- Podman 6, replacing slirp4netns.
-
-Package: podman
-Version: 6.1.2-1~jammy
-Architecture: amd64
-Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 78986
-Depends: libc6 (>= 2.34), libgpgme11 (>= 1.5.0), libseccomp2 (>= 2.5.0), conmon (>= 2.0), crun | runc, netavark
-Recommends: podman-docker, containers-common
-Priority: optional
-Section: admin
-Filename: pool/main/p/podman/podman_6.1.2-1~jammy_amd64.deb
-Size: 24968918
-SHA256: 5b38bbd5926903b1012dae1863ef6bccece1a74c237b1d2eb1c97a32963aaf83
-SHA1: ef042be942e067c950ec712b7570650d47f22eb3
-MD5sum: b1ddbcbd6aa8ffb1a78b70c9be8abf9f
-Description: daemonless container engine for managing OCI containers
- Podman manages pods, containers, and container images without requiring a
- central daemon. It provides a Docker-compatible command line interface and
- supports rootless operation.
- .
- This package is built from upstream releases by the podman-ubuntu project;
- the packaging is maintained to Debian policy with the intent of proposing
- it to Debian/Ubuntu proper.
-
 Package: podman-suite
-Version: 6.1.2-1~jammy
+Version: 6.1.3-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 6.1.2-1~jammy), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 6.1.3-1~jammy), conmon, crun, netavark, aardvark-dns, passt, containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_6.1.2-1~jammy_all.deb
-Size: 1966
-SHA256: e3482cb956b2c3db3831a9a3e78c33c0f8862f3402822f8a5f6f78c5f320d0b5
-SHA1: aa91163a799c2df31c40acad50a16b0dab7b296a
-MD5sum: c439b06e14c94b0d4daf7829c3ef90d7
+Filename: pool/main/p/podman-suite/podman-suite_6.1.3-1~jammy_all.deb
+Size: 1976
+SHA256: ccf8f258d55e330dc38dd8e9101be0ba81b4ba96b67c79b21d056222b89d6115
+SHA1: 75c02e6ae83004e906171ea736e582ae28825d1e
+MD5sum: e4d386836777e5e2fd245602abecef32
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration
