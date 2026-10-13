@@ -22,6 +22,7 @@ import check_releases  # noqa: E402
 import check_watch_pr  # noqa: E402
 import create_releases  # noqa: E402
 import lib  # noqa: E402
+import publish_repo  # noqa: E402
 import verify_upstream_pins  # noqa: E402
 
 
@@ -140,6 +141,27 @@ class TestWatchGate(unittest.TestCase):
         self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "6.1.3"))
         self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "7.0.0"))
         self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "nightly"))
+
+
+class TestParseListed(unittest.TestCase):
+    """reprepro list lines are suite|component|arch: name version. The
+    arch token drives the Architecture term of the stale-entry
+    removefilter; dropping it (the old arch-blind code) made the arm64
+    replacement delete the just-included amd64 entry."""
+
+    def test_parses_architectures(self):
+        out = ("v5-2404|main|amd64: aardvark-dns 1.16.0-1~noble\n"
+               "v5-2404|main|arm64: aardvark-dns 1.16.0-1~noble\n"
+               "v5-2404|main|all: containers-common 0.69.2-1~noble\n")
+        self.assertEqual(
+            publish_repo.parse_listed(out),
+            {("1.16.0-1~noble", "amd64"), ("1.16.0-1~noble", "arm64"),
+             ("0.69.2-1~noble", "all")})
+
+    def test_ignores_noise(self):
+        self.assertEqual(publish_repo.parse_listed(""), set())
+        self.assertEqual(publish_repo.parse_listed("garbage line\n"),
+                         set())
 
 
 class TestGoModChecks(unittest.TestCase):

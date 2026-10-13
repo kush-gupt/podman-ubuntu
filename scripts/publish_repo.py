@@ -41,6 +41,22 @@ def git(*args, cwd=REPO_ROOT, check=True):
                capture_output=True, text=True)
 
 
+def parse_listed(output):
+    """Parse `reprepro list` output into {(version, architecture)}.
+
+    Lines look like "stable-2404|main|amd64: crun 1.30.1-1~noble"
+    (suite|component|architecture). The architecture token is the one
+    reprepro recorded for the package (its own Architecture field),
+    which is what a removefilter Architecture term must match."""
+    entries = set()
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and "|" in parts[0]:
+            arch = parts[0].rsplit("|", 1)[1].rstrip(":")
+            entries.add((parts[2], arch))
+    return entries
+
+
 def main():
     try:
         subkey_b64 = os.environ["APT_SIGNING_SUBKEY"]
@@ -172,11 +188,20 @@ def main():
         return run("dpkg-deb", "-f", deb, field,
                    capture_output=True, text=True).stdout.strip()
 
-    def suite_has(suite, pkg, version):
+    def stale_entries(suite, pkg, dver, darch):
+        """Architectures under which (pkg, dver) is listed in `suite`
+        and which a replacement must remove. Matching is per recorded
+        architecture: a filter without an Architecture term removes
+        EVERY architecture's entry, so replacing the amd64 build and
+        then the arm64 build of the same version left only arm64 in
+        the repo (the arm64 pass deleted the just-included amd64
+        entry). Architecture-independent debs (darch "all") match any
+        recorded arch and vice versa."""
         out = run("reprepro", "-b", aptd, "list", suite, pkg,
                   capture_output=True, text=True).stdout
-        return any(len(l.split()) >= 3 and l.split()[2] == version
-                   for l in out.splitlines())
+        return sorted({a for (v, a) in parse_listed(out)
+                       if v == dver
+                       and (a == darch or darch == "all" or a == "all")})
 
     for (comp, ver, ubuntu, arch) in sorted(groups):
         g = groups[(comp, ver, ubuntu, arch)]
@@ -191,15 +216,20 @@ def main():
         # unreferenced pool file, so the fresh build can land.
         run_suites = [f"{t}-{flat(ubuntu)}" for t in tracks]
         for deb in debs:
-            pkg, dver = deb_field(deb, "Package"), deb_field(deb, "Version")
+            pkg = deb_field(deb, "Package")
+            dver = deb_field(deb, "Version")
+            darch = deb_field(deb, "Architecture")
             removed = False
             for suite in run_suites:
-                if suite_has(suite, pkg, dver):
+                for larch in stale_entries(suite, pkg, dver, darch):
                     # removefilter targets one exact version; plain
                     # `remove suite pkg=version` silently matches nothing
                     # (it parses the whole string as a package name).
+                    # The Architecture term is load-bearing: without it
+                    # the filter removes every architecture's entry.
                     run("reprepro", "-b", aptd, "removefilter", suite,
-                        f"Package (== {pkg}), Version (== {dver})",
+                        f"Package (== {pkg}), Version (== {dver}), "
+                        f"Architecture (== {larch})",
                         capture_output=True, text=True)
                     removed = True
             if removed:
