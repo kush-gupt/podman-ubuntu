@@ -40,8 +40,42 @@ def suites():
     return {"ubuntu": ubuntu_releases(), "tracks": sorted(v.keys())}
 
 
+MANIFEST_URL = os.environ.get(
+    "MANIFEST_URL",
+    "https://raw.githubusercontent.com/kush-gupt/podman-ubuntu/"
+    "apt-repo/manifest.json")
+_MANIFEST_CACHE = None
+
+
 def load_manifest():
-    return load_json("manifest.json").get("built", {})
+    """Published-builds manifest: (component, version) -> packaging_sha.
+
+    The manifest is machine state, not source: publish_repo.py records it
+    on the apt-repo branch, atomically with the debs it describes, and
+    build_matrix reads it from there. main's manifest.json is only the
+    migration seed / offline fallback. A fetch failure falls back to the
+    local file, then to empty; a stale or empty manifest only ever causes
+    extra rebuilds, never wrong skips, because is_built also requires
+    the packaging_sha to match. Set MANIFEST_URL="" to disable fetching.
+    """
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is not None:
+        return _MANIFEST_CACHE
+    built = {}
+    if MANIFEST_URL:
+        try:
+            import urllib.request
+            with urllib.request.urlopen(MANIFEST_URL, timeout=10) as r:
+                built = json.load(r).get("built", {})
+        except Exception:
+            built = {}
+    if not built:
+        try:
+            built = load_json("manifest.json").get("built", {})
+        except Exception:
+            built = {}
+    _MANIFEST_CACHE = built
+    return built
 
 
 def _tree_sha(path):

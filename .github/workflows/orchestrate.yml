@@ -29,7 +29,7 @@ on:
       - ".github/workflows/orchestrate.yml"
   # PRs run the same build+smoke matrix against themselves so packaging
   # changes are validated before merge. The publish job is gated to pushes
-  # below: PRs never touch the apt-repo branch, Pages, or main's manifest.
+  # below: PRs never touch the apt-repo branch or Pages.
   pull_request:
     branches: [main]
     paths:
@@ -172,8 +172,9 @@ jobs:
 
   publish:
     needs: [setup, smoke]
-    # Publishing mutates the apt-repo branch, the Pages deployment, and
-    # main's manifest: only pushes to main may do that. PR runs stop after
+    # Publishing mutates the apt-repo branch (including the build
+    # manifest recorded on it) and the Pages deployment: only pushes to
+    # main may do that. PR runs stop after
     # smoke. The explicit always() is needed because GitHub sometimes skips
     # publish even when all smoke jobs succeed (matrix + if: interaction).
     if: |

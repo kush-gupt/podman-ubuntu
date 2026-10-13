@@ -8,8 +8,8 @@ Artifact dirs carry a meta.json sidecar (written by build.yml); grouping and
 suite assignment read it instead of parsing directory names.
 
 Steps: gather -> reprepro includedeb per suite -> prune to newest 3 ->
-       sign -> commit+push apt-repo branch -> stage apt-repo-publish/ ->
-       record manifest.json on main. Stdlib only.
+       sign -> record manifest.json on the apt-repo branch -> commit+push
+       apt-repo branch -> stage apt-repo-publish/. Stdlib only.
 """
 import base64
 import glob
@@ -247,6 +247,32 @@ def main():
     shutil.copy("keys/apt-signing.asc",
                 os.path.join(aptd, "keys", "apt-signing.asc"))
 
+    # --- record the manifest on the apt-repo branch -------------------------
+    # Records (component, version) -> packaging_sha so future builds skip
+    # only when both the upstream version AND the packaging inputs are
+    # unchanged. (A packaging-only fix like a debian/rules change must
+    # trigger a rebuild; a version-only key would silently ship stale
+    # debs.) The manifest is machine state: it lives on the apt-repo
+    # branch and lands atomically with the debs it describes. It used to
+    # be committed to main by this job, but required status checks on
+    # main reject the bot's direct push, and the extra commits raced
+    # human pushes besides.
+    mpath = os.path.join(aptd, "manifest.json")
+    if os.path.exists(mpath):
+        with open(mpath) as f:
+            manifest = json.load(f)
+    else:  # migration seed: main's last hand-off copy
+        with open("manifest.json") as f:
+            manifest = json.load(f)
+    built = manifest.setdefault("built", {})
+    for _d, m in artifacts:
+        built.setdefault(m["component"], {})[m["version"]] = {
+            "packaging_sha": lib.packaging_sha(m["component"]),
+        }
+    with open(mpath, "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+
     run("git", "add", "-A", cwd=aptd)
     run("git", *BOT, "commit", "-m",
         f"apt-repo: publish {datetime.now(timezone.utc):%Y%m%d-%H%M}",
@@ -260,26 +286,6 @@ def main():
         "--exclude", ".git", "--exclude", ".gnupg",
         f"{aptd}/", f"{stage}/")
 
-    # --- record manifest on main --------------------------------------------------
-    # Records (component, version) -> packaging_sha so future builds skip only
-    # when both the upstream version AND the packaging inputs are unchanged.
-    # (A packaging-only fix like a debian/rules change must trigger a rebuild;
-    # a version-only key would silently ship stale debs.)
-    with open("manifest.json") as f:
-        manifest = json.load(f)
-    built = manifest.setdefault("built", {})
-    for _d, m in artifacts:
-        built.setdefault(m["component"], {})[m["version"]] = {
-            "packaging_sha": lib.packaging_sha(m["component"]),
-        }
-    with open("manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
-        f.write("\n")
-    run("git", "add", "manifest.json")
-    run("git", *BOT, "commit", "-m",
-        "chore: record published builds in manifest.json",
-        check=False, capture_output=True)
-    run("git", "push", "origin", "main")
     run("git", "worktree", "remove", "--force", "apt-repo")
 
     print("Publish complete.")

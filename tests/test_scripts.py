@@ -49,6 +49,22 @@ class LatestPerTrack(unittest.TestCase):
         self.assertEqual(best, {"stable": "6.1.4"})
 
 
+class TestManifestLoading(unittest.TestCase):
+    def test_load_manifest_falls_back_to_seed(self):
+        # Point the fetch at a dead URL: load_manifest must not raise,
+        # and must fall back to main's seed manifest.json.
+        saved = lib.MANIFEST_URL
+        lib.MANIFEST_URL = "http://127.0.0.1:9/manifest.json"
+        lib._MANIFEST_CACHE = None
+        try:
+            built = lib.load_manifest()
+            self.assertIsInstance(built, dict)
+            self.assertIn("podman", built)
+        finally:
+            lib.MANIFEST_URL = saved
+            lib._MANIFEST_CACHE = None
+
+
 class RepoInvariants(unittest.TestCase):
     def test_every_tracked_version_has_a_pin_stack(self):
         # The PR #13 regression: build_matrix.py hard-fails on this.
