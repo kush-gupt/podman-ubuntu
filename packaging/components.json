@@ -28,7 +28,7 @@
     "conmon": "2.1.13",
     "containers-common": "0.67.2",
     "crun": "1.21",
-    "go": "1.24.6",
+    "go": "1.26.1",
     "netavark": "1.16.0",
     "passt": "20260925",
     "passt_sha": "df90211db4b08a06ed4e499ffa40bf8811100a2f",
