@@ -124,6 +124,14 @@ def main():
     for track in tracks:
         for uv in ubuntus:
             existing[f"{track}-{flat(uv)}"] = stanza(track, uv)
+    # End-of-life cleanup: drop stanzas for Ubuntu releases that left
+    # ubuntu-versions.json, for every track (the additive merge above
+    # would otherwise keep publishing them forever with stale packages).
+    # clearvanished below purges their db entries and dists/ files.
+    keep = set(lib.kept_codenames(list(existing), lib.ubuntu_releases()))
+    for codename in sorted(set(existing) - keep):
+        print(f"dropping end-of-life suite {codename}", flush=True)
+        del existing[codename]
     with open(dist_path, "w") as f:
         f.write("\n".join(existing[c] for c in sorted(existing)) + "\n")
     with open(os.path.join(aptd, "conf", "options"), "w") as f:
@@ -134,6 +142,9 @@ def main():
              text=True, check=False)
     print(cv.stdout, flush=True)
     print(cv.stderr, flush=True)
+    # Pool files of vanished suites are unreferenced now; drop them too.
+    run("reprepro", "-b", aptd, "deleteunreferenced",
+        capture_output=True, text=True, check=False)
 
     # --- include debs ------------------------------------------------------
     # Artifacts download to debs/debs-*/ (actions/download-artifact nests each

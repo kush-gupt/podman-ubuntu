@@ -6,7 +6,7 @@ than parsing directory names, then installs with apt so dependencies resolve
 in one step. Fails loudly when nothing matches: a silent empty install would
 smoke-test nothing. Stdlib only.
 
-Usage: install_debs.py <track> <ubuntu_version>
+Usage: install_debs.py <track> <ubuntu_version> [arch]
 """
 import glob
 import os
@@ -19,13 +19,19 @@ import lib
 
 def main():
     track, uver = sys.argv[1], sys.argv[2]
+    if len(sys.argv) > 3:
+        arch = sys.argv[3]
+    else:
+        arch = subprocess.run(["dpkg", "--print-architecture"],
+                              capture_output=True, text=True,
+                              check=True).stdout.strip()
     debs = []
     for d, m in lib.iter_artifacts("debs"):
-        if (m["track"], m["ubuntu"], m["arch"]) == (track, uver, "amd64"):
+        if (m["track"], m["ubuntu"], m["arch"]) == (track, uver, arch):
             debs += glob.glob(os.path.join(d, "*.deb"))
     if not debs:
-        sys.exit(f"ERROR: no artifacts for track={track} ubuntu={uver}; "
-                 f"refusing to smoke-test an empty install")
+        sys.exit(f"ERROR: no artifacts for track={track} ubuntu={uver} "
+                 f"arch={arch}; refusing to smoke-test an empty install")
 
     subprocess.run(["apt-get", "update", "-qq"], check=True)
     # CA certs: the minimal ubuntu container image can't verify registry TLS

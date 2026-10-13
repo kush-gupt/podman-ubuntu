@@ -1,0 +1,39 @@
+# Auto-merge watch PRs that need no human judgment: a patch-level
+# podman bump whose seeded pin stack is the previous stack with only
+# the podman pin changed (scripts/check_watch_pr.py decides). Required
+# status checks still gate the actual merge; anything else waits for
+# a human.
+name: watch-auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: startsWith(github.head_ref, 'watch/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Evaluate the PR against the auto-merge gate
+        id: gate
+        run: |
+          git fetch origin main
+          python3 scripts/check_watch_pr.py --base origin/main \
+            | tee /tmp/gate.out
+          grep '^eligible=' /tmp/gate.out >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.gate.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge ${{ github.event.pull_request.number }} --auto --merge

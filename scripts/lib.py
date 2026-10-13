@@ -40,6 +40,22 @@ def suites():
     return {"ubuntu": ubuntu_releases(), "tracks": sorted(v.keys())}
 
 
+def kept_codenames(codenames, releases):
+    """Filter suite codenames (<track>-<YYMM>) to those whose Ubuntu
+    release is still supported. Suites for end-of-life Ubuntu releases
+    are dropped at publish time; reprepro's clearvanished then purges
+    their database entries and dists/ files. Codenames that don't parse
+    as <track>-<YYMM> are kept: never delete what we don't understand."""
+    keep = {r.replace(".", "") for r in releases}
+    out = []
+    for c in codenames:
+        tail = c.rsplit("-", 1)[-1]
+        if len(tail) == 4 and tail.isdigit() and tail not in keep:
+            continue
+        out.append(c)
+    return out
+
+
 MANIFEST_URL = os.environ.get(
     "MANIFEST_URL",
     "https://raw.githubusercontent.com/kush-gupt/podman-ubuntu/"

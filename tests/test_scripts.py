@@ -19,7 +19,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import check_releases  # noqa: E402
+import check_watch_pr  # noqa: E402
+import create_releases  # noqa: E402
 import lib  # noqa: E402
+import verify_upstream_pins  # noqa: E402
 
 
 def rel(tag, draft=False, prerelease=False):
@@ -47,6 +50,122 @@ class LatestPerTrack(unittest.TestCase):
             rel("nightly"),
         ])
         self.assertEqual(best, {"stable": "6.1.4"})
+
+
+class TestKeptCodenames(unittest.TestCase):
+    def test_drops_eol_suites_keeps_current(self):
+        names = ["stable-2204", "stable-2404", "v5-2604", "nightly-2404"]
+        self.assertEqual(lib.kept_codenames(names, ["24.04", "26.04"]),
+                         ["stable-2404", "v5-2604", "nightly-2404"])
+
+    def test_unparseable_codenames_are_kept(self):
+        names = ["weird", "stable-latest", "x-12345"]
+        self.assertEqual(lib.kept_codenames(names, ["24.04"]), names)
+
+
+class TestWatchGate(unittest.TestCase):
+    BASE_V = {"stable": "6.1.3", "v5": "5.8.8"}
+    STACK_613 = {"podman": "6.1.3", "crun": "1.30.1", "go": "1.26.1",
+                 "passt": "20260925", "passt_sha": "abc"}
+    BASE_S = {"6.1.3": STACK_613, "5.8.8": {"podman": "5.8.8"}}
+
+    def _eval(self, head_v, head_s, files=("versions.json",
+                                           "packaging/components.json")):
+        return check_watch_pr.evaluate(self.BASE_V, head_v, self.BASE_S,
+                                       head_s, list(files))
+
+    def test_patch_bump_with_clean_seed_is_eligible(self):
+        head_v = {"stable": "6.1.4", "v5": "5.8.8"}
+        seeded = dict(self.STACK_613, podman="6.1.4")
+        head_s = dict(self.BASE_S, **{"6.1.4": seeded})
+        ok, reasons = self._eval(head_v, head_s)
+        self.assertTrue(ok, reasons)
+
+    def test_minor_bump_is_not_eligible(self):
+        head_v = {"stable": "6.2.0", "v5": "5.8.8"}
+        seeded = dict(self.STACK_613, podman="6.2.0")
+        head_s = dict(self.BASE_S, **{"6.2.0": seeded})
+        ok, _ = self._eval(head_v, head_s)
+        self.assertFalse(ok)
+
+    def test_hand_edited_seed_is_not_eligible(self):
+        head_v = {"stable": "6.1.4", "v5": "5.8.8"}
+        seeded = dict(self.STACK_613, podman="6.1.4", crun="1.31.0")
+        head_s = dict(self.BASE_S, **{"6.1.4": seeded})
+        ok, _ = self._eval(head_v, head_s)
+        self.assertFalse(ok)
+
+    def test_extra_file_is_not_eligible(self):
+        head_v = {"stable": "6.1.4", "v5": "5.8.8"}
+        seeded = dict(self.STACK_613, podman="6.1.4")
+        head_s = dict(self.BASE_S, **{"6.1.4": seeded})
+        ok, _ = self._eval(head_v, head_s,
+                           files=("versions.json",
+                                  "packaging/components.json", "README.md"))
+        self.assertFalse(ok)
+
+    def test_two_tracks_changed_is_not_eligible(self):
+        # Both tracks bump but the seeded stacks are missing entirely.
+        head_v = {"stable": "6.1.4", "v5": "5.8.9"}
+        head_s = dict(self.BASE_S)
+        ok, _ = self._eval(head_v, head_s)
+        self.assertFalse(ok)
+
+    def test_two_track_bundle_with_clean_seeds_is_eligible(self):
+        # The common real case (PR #13): stable and v5 patch bumps land
+        # in one watch PR, each with a clean seeded stack.
+        head_v = {"stable": "6.1.4", "v5": "5.8.9"}
+        head_s = dict(self.BASE_S)
+        head_s["6.1.4"] = dict(self.STACK_613, podman="6.1.4")
+        head_s["5.8.9"] = dict(self.BASE_S["5.8.8"], podman="5.8.9")
+        ok, reasons = self._eval(head_v, head_s)
+        self.assertTrue(ok, reasons)
+
+    def test_note_metadata_difference_is_ignored(self):
+        # components.json carries a `_note` string alongside the stacks;
+        # it is documentation, not a pin stack.
+        base_s = dict(self.BASE_S, _note="old wording")
+        head_v = {"stable": "6.1.4", "v5": "5.8.8"}
+        seeded = dict(self.STACK_613, podman="6.1.4")
+        head_s = dict(self.BASE_S, **{"6.1.4": seeded},
+                      _note="new wording")
+        ok, reasons = check_watch_pr.evaluate(
+            self.BASE_V, head_v, base_s, head_s,
+            ["versions.json", "packaging/components.json"])
+        self.assertTrue(ok, reasons)
+
+    def test_is_patch_bump(self):
+        self.assertTrue(check_watch_pr.is_patch_bump("6.1.3", "6.1.4"))
+        self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "6.2.0"))
+        self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "6.1.3"))
+        self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "7.0.0"))
+        self.assertFalse(check_watch_pr.is_patch_bump("6.1.3", "nightly"))
+
+
+class TestGoModChecks(unittest.TestCase):
+    def test_parse_go_directive(self):
+        text = "module github.com/containers/podman/v6\n\ngo 1.25\n"
+        self.assertEqual(verify_upstream_pins.parse_go_directive(text),
+                         (1, 25))
+        self.assertIsNone(verify_upstream_pins.parse_go_directive(
+            "module x\n"))
+
+    def test_go_pin_ok(self):
+        self.assertTrue(verify_upstream_pins.go_pin_ok("1.26.1", (1, 25)))
+        self.assertTrue(verify_upstream_pins.go_pin_ok("1.25.0", (1, 25)))
+        self.assertFalse(verify_upstream_pins.go_pin_ok("1.24.9", (1, 25)))
+
+
+class TestReleaseNotes(unittest.TestCase):
+    def test_notes_cover_stack_and_suites(self):
+        stack = {"podman": "6.1.4", "crun": "1.30.1", "passt_sha": "abc"}
+        notes = create_releases.release_notes(
+            "stable", "6.1.4", stack, ["24.04", "26.04"])
+        self.assertIn("podman 6.1.4 (stable", notes)
+        self.assertIn("| crun | 1.30.1 |", notes)
+        self.assertIn("stable-2404", notes)
+        self.assertIn("stable-2604", notes)
+        self.assertNotIn("passt_sha", notes)
 
 
 class TestManifestLoading(unittest.TestCase):

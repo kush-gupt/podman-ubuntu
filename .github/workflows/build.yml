@@ -35,7 +35,11 @@ jobs:
     outputs:
       skipped: ${{ steps.skipcheck.outputs.skipped }}
     steps:
+      # Full history: the SOURCE_DATE_EPOCH step below needs the last
+      # commit that touched this component's packaging inputs.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: Skip if already published
         id: skipcheck
@@ -91,6 +95,28 @@ jobs:
           restore-keys: |
             go-
 
+      - name: Pin SOURCE_DATE_EPOCH to the packaging inputs
+        if: steps.skipcheck.outputs.skipped != 'true'
+        run: |
+          # Reproducible builds: dpkg-deb and dch clamp embedded
+          # timestamps to SOURCE_DATE_EPOCH. Anchor it to the last commit
+          # that touched this component's packaging inputs (the same
+          # paths lib.packaging_sha hashes), NOT to HEAD: unrelated
+          # commits must not move it, or a rebuild of the same
+          # (component, version) produces different bytes and reprepro's
+          # shared pool cannot hold two same-named debs. It is written to
+          # GITHUB_ENV so both prepare-source.sh and dpkg-buildpackage
+          # below inherit it.
+          sde=$(git log -1 --format=%ct -- \
+            "packaging/${{ inputs.component }}" \
+            packaging/common \
+            scripts/prepare-source.sh)
+          if [ -z "$sde" ]; then
+            sde=$(git log -1 --format=%ct)
+          fi
+          echo "SOURCE_DATE_EPOCH=$sde" >> "$GITHUB_ENV"
+          echo "SOURCE_DATE_EPOCH=$sde ($(date -u -d "@$sde" +%F))"
+
       - name: Prepare source package
         if: steps.skipcheck.outputs.skipped != 'true'
         run: |
@@ -112,6 +138,11 @@ jobs:
         # noddebsym: skip -dbgsym packages (not needed for our APT repo).
         env:
           DEB_BUILD_OPTIONS: nocheck noddebsym
+          # The source tree sits inside this repo's git checkout; without
+          # this, Go stamps the packaging repo's HEAD revision and commit
+          # time into binaries (wrong data, and different on every commit,
+          # which breaks reproducibility).
+          GOFLAGS: -buildvcs=false
         run: |
           cd "build/src/${{ inputs.component }}-${{ inputs.version }}"
           dpkg-buildpackage -b -uc -us -d
