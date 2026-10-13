@@ -47,5 +47,5 @@
     "podman": "6.1.3",
     "rust": "1.88.0"
   },
-  "_note": "The full dependency stack pinned per podman version. Taken from the upstream release notes of each podman release. The watch workflow opens a PR with the podman version filled in; a human fills the component pins before merge. CI fails the PR if a podman version has no entry here."
+  "_note": "The full dependency stack pinned per podman version, taken from the upstream release notes of each podman release. The watch workflow seeds a new version's entry by carrying the previous release's stack forward; a human verifies the pins against the release notes before merge. CI fails the PR if a podman version has no entry here."
 }
