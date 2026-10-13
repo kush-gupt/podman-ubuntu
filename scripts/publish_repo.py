@@ -156,11 +156,49 @@ def main():
         key = (m["component"], m["version"], m["ubuntu"], m["arch"])
         g = groups.setdefault(key, {"dir": d, "tracks": set()})
         g["tracks"].add(m["track"])
+
+    def deb_field(deb, field):
+        return run("dpkg-deb", "-f", deb, field,
+                   capture_output=True, text=True).stdout.strip()
+
+    def suite_has(suite, pkg, version):
+        out = run("reprepro", "-b", aptd, "list", suite, pkg,
+                  capture_output=True, text=True).stdout
+        return any(len(l.split()) >= 3 and l.split()[2] == version
+                   for l in out.splitlines())
+
     for (comp, ver, ubuntu, arch) in sorted(groups):
         g = groups[(comp, ver, ubuntu, arch)]
+        debs = sorted(glob.glob(os.path.join(g["dir"], "*.deb")))
+        # A rebuild of an already-published (package, version) produces
+        # different bytes (the builds are not reproducible), and reprepro
+        # refuses to include a pool file whose checksums differ from the
+        # copy already published ("Already existing files can only be
+        # included again, if they are the same"). That is exactly what a
+        # packaging-only fix triggers: same version, new bytes. Remove the
+        # stale entry from every suite this run publishes and drop the
+        # unreferenced pool file, so the fresh build can land.
+        run_suites = [f"{t}-{flat(ubuntu)}" for t in tracks]
+        for deb in debs:
+            pkg, dver = deb_field(deb, "Package"), deb_field(deb, "Version")
+            removed = False
+            for suite in run_suites:
+                if suite_has(suite, pkg, dver):
+                    # removefilter targets one exact version; plain
+                    # `remove suite pkg=version` silently matches nothing
+                    # (it parses the whole string as a package name).
+                    run("reprepro", "-b", aptd, "removefilter", suite,
+                        f"Package (== {pkg}), Version (== {dver})",
+                        capture_output=True, text=True)
+                    removed = True
+            if removed:
+                run("reprepro", "-b", aptd, "deleteunreferenced",
+                    capture_output=True, text=True)
+                print(f"replaced stale {pkg} {dver} (Ubuntu {ubuntu}, "
+                      f"{arch})", flush=True)
         for track in sorted(g["tracks"]):
             suite = f"{track}-{flat(ubuntu)}"
-            for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
+            for deb in debs:
                 r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
                         capture_output=True, text=True, check=False)
                 if r.returncode != 0:
@@ -196,8 +234,12 @@ def main():
                          capture_output=True, text=True).stdout.splitlines()),
                     key=cmp_to_key(deb_cmp))
                 for old in vers[:-3]:
-                    run("reprepro", "-b", aptd, "remove", suite,
-                        f"{pkg}={old}", check=False, capture_output=True)
+                    # removefilter, not `remove pkg=version`: the latter
+                    # silently matches nothing, so pruning never actually
+                    # removed anything.
+                    run("reprepro", "-b", aptd, "removefilter", suite,
+                        f"Package (== {pkg}), Version (== {old})",
+                        check=False, capture_output=True)
                     print(f"pruned {pkg} {old} from {suite}", flush=True)
 
     # --- sign + publish key ---------------------------------------------------

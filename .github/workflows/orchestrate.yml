@@ -13,10 +13,19 @@ on:
     branches: [main]
     paths:
       - "versions.json"
-      - "components.json"
       - "ubuntu-versions.json"
       - "packaging/**"
-      - "scripts/**"
+      # Only the scripts the build/publish pipeline actually executes.
+      # Tooling that runs elsewhere (check_releases.py in watch.yml,
+      # create_watch_prs.py from an external cron) must not fan out a
+      # full build matrix when it changes; script-tests.yml covers it.
+      - "scripts/build_matrix.py"
+      - "scripts/install_debs.py"
+      - "scripts/is_built.py"
+      - "scripts/lib.py"
+      - "scripts/prepare-source.sh"
+      - "scripts/publish_repo.py"
+      - ".github/workflows/build.yml"
       - ".github/workflows/orchestrate.yml"
   # PRs run the same build+smoke matrix against themselves so packaging
   # changes are validated before merge. The publish job is gated to pushes
@@ -25,10 +34,15 @@ on:
     branches: [main]
     paths:
       - "versions.json"
-      - "components.json"
       - "ubuntu-versions.json"
       - "packaging/**"
-      - "scripts/**"
+      - "scripts/build_matrix.py"
+      - "scripts/install_debs.py"
+      - "scripts/is_built.py"
+      - "scripts/lib.py"
+      - "scripts/prepare-source.sh"
+      - "scripts/publish_repo.py"
+      - ".github/workflows/build.yml"
       - ".github/workflows/orchestrate.yml"
   workflow_dispatch:
     inputs:
@@ -51,7 +65,7 @@ jobs:
       level1: ${{ steps.matrix.outputs.level1 }}
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
@@ -111,8 +125,8 @@ jobs:
       image: ubuntu:${{ matrix.ubuntu_version }}
       options: --privileged
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: debs-*
           path: debs
@@ -173,10 +187,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: debs-*
           path: debs
@@ -187,8 +201,8 @@ jobs:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
           TRACKS: ${{ join(fromJSON(needs.setup.outputs.suites).tracks, ',') }}
         run: python3 scripts/publish_repo.py
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: apt-repo-publish
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
