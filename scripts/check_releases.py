@@ -16,6 +16,7 @@ from datetime import date, datetime
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSIONS_FILE = os.path.join(REPO_ROOT, "versions.json")
 UBUNTU_FILE = os.path.join(REPO_ROOT, "ubuntu-versions.json")
+COMPONENTS_FILE = os.path.join(REPO_ROOT, "packaging", "components.json")
 PR_BODY = "/tmp/watch-pr-body.md"
 
 PODMAN_API = "https://api.github.com/repos/containers/podman/releases?per_page=100"
@@ -85,11 +86,26 @@ def main():
 
     changes = []
 
+    with open(COMPONENTS_FILE) as f:
+        components = json.load(f)
+
+    seeded = []
     podman = latest_per_track(get_json(PODMAN_API))
     for track, ver in sorted(podman.items()):
-        if versions.get(track) != ver:
-            changes.append(f"podman {track}: {versions.get(track)} -> {ver}")
+        old = versions.get(track)
+        if old != ver:
+            changes.append(f"podman {track}: {old} -> {ver}")
             versions[track] = ver
+            # Seed the new version's dependency stack from the previous
+            # release on the track so build_matrix validation passes
+            # and the PR can build. Patch releases keep the stack; the
+            # PR checklist asks a human to confirm the pins against
+            # the upstream release notes before merge.
+            if ver not in components and old in components:
+                stack = dict(components[old])
+                stack["podman"] = ver
+                components[ver] = stack
+                seeded.append(ver)
 
     supported = supported_ubuntu()
     if ubuntu.get("releases") != supported:
@@ -112,6 +128,10 @@ def main():
     with open(UBUNTU_FILE, "w") as f:
         json.dump(ubuntu, f, indent=2)
         f.write("\n")
+    if seeded:
+        with open(COMPONENTS_FILE, "w") as f:
+            json.dump(components, f, indent=2, sort_keys=True)
+            f.write("\n")
 
     summary = "; ".join(changes)
     stamp = datetime.now().strftime("%Y%m%d-%H%M")
@@ -120,12 +140,19 @@ def main():
         f.write(
             "Automated upstream watch found changes:\n\n"
             + "".join(f"- {c}\n" for c in changes)
+            + "".join(
+                f"- dependency pins for podman {v} seeded in "
+                "`packaging/components.json` by carrying the previous "
+                "release's stack forward\n"
+                for v in seeded
+            )
             + "\n## Release checklist (podman bumps)\n\n"
-            "- [ ] Fill the dependency stack pins for the new podman version "
-            "in `packaging/components.json` from the upstream release notes "
+            "- [ ] Verify the seeded dependency stack pins in "
+            "`packaging/components.json` against the upstream release notes "
             "(crun, conmon, netavark, aardvark-dns, passt, containers-common)\n"
             "- [ ] If the release notes require a newer Go/Rust toolchain, "
-            "bump `GO_VERSION`/`RUST_VERSION` in `images/builder.Containerfile`\n"
+            "bump `go`/`rust` in the new version's stack in "
+            "`packaging/components.json`\n"
             "- [ ] Merging this PR triggers the build matrix.\n"
         )
 
