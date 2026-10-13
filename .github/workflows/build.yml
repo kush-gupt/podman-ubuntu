@@ -41,6 +41,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Trust the workspace for git
+        run: |
+          # Container jobs run as root over a bind-mounted workspace
+          # owned by the host runner user, so git refuses every command
+          # with "detected dubious ownership" (checkout only fixes its
+          # own temporary config). lib.packaging_sha shells out to git,
+          # so without this the skip check below crashes and the crash
+          # is silently read as "not built", and the SOURCE_DATE_EPOCH
+          # step fails outright.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Skip if already published
         id: skipcheck
         run: |
