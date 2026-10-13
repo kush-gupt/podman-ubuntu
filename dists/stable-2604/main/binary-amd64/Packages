@@ -6,10 +6,10 @@ Installed-Size: 67
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.69.2-1~resolute_all.deb
-Size: 16744
-SHA256: b4d4f0111db97c5f4089dee04e54ae457e17b41c8f165f10355e967e83877300
-SHA1: 2cfd8c13cc0dafe74b11469629af3e2db37757c8
-MD5sum: dc79d148f24f35d866ca6f4508fda00e
+Size: 16748
+SHA256: 01293205175d479d70841335d7e99126d1e53268602d961c0ca8496da2dc5c6e
+SHA1: f9b82028cb2d2baa1a9816d532a8b4c7c7354f86
+MD5sum: cb798c1f1bd96e3810bbc272b7f7d0e5
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -23,10 +23,10 @@ Depends: podman (= 6.1.3-1~resolute), conmon, crun, netavark, aardvark-dns, pass
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman-suite/podman-suite_6.1.3-1~resolute_all.deb
-Size: 1976
-SHA256: ed7c7502fc6dd2128715cd0f88d7827fddb18a9dde4503ade68b5fddff1cb377
-SHA1: 888fe6c8068bd916a64216844a474ac837acffc6
-MD5sum: 1275445875f05f68343bf2a2756afdfe
+Size: 1982
+SHA256: 13d9c31e17e24a1b8a00d898f44e944dc9d5cdaf26b2b22fe4d26c98b93fc654
+SHA1: 2daa284b53240ef1ff7dba46142a6683f11b32f6
+MD5sum: 28e9f8fa2b7e3eb0d28298dbaf5437e5
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

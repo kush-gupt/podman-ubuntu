@@ -2,7 +2,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: nightly-2404
 Codename: nightly-2404
-Date: Tue, 13 Oct 2026 13:51:50 UTC
+Date: Tue, 13 Oct 2026 14:53:34 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu nightly track for Ubuntu 24.04
