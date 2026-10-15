@@ -81,10 +81,17 @@ jobs:
           # match our graph driver \"vfs\""), including the proof run
           # at the end of install_published.sh. Remove the baked-in
           # state so the install starts from a clean slate; the reset
-          # runs again after install, before the smoke.
+          # runs again after install, before the smoke. The baked-in
+          # /etc/containers/networks holds podman 4.9-era network
+          # definitions our netavark 2.x cannot parse ("failed to load
+          # network options: invalid type: sequence, expected a map"),
+          # so it goes too (the cat/ls keep the evidence in the log).
           sudo cat /etc/containers/storage.conf 2>/dev/null || true
+          sudo ls /etc/containers/networks/ 2>/dev/null || true
+          sudo cat /etc/containers/networks/*.json 2>/dev/null || true
           sudo rm -rf /var/lib/containers/storage
           sudo rm -f /etc/containers/storage.conf
+          sudo rm -rf /etc/containers/networks
       - name: Install from the live repository (README recipe, host)
         run: sudo bash scripts/install_published.sh stable 24.04
       - name: Assert the installed podman version
@@ -100,6 +107,7 @@ jobs:
           # overlay, so start it from a clean slate again.
           sudo rm -rf /var/lib/containers/storage
           sudo rm -f /etc/containers/storage.conf
+          sudo rm -rf /etc/containers/networks
       - name: Host smoke (overlay, cgroup v2, rootless networking)
         run: |
           # pasta (rootless networking) needs the tun device; the
