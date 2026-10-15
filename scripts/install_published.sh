@@ -31,8 +31,14 @@ SUITE="${TRACK}-${FLAT}"
 
 index_url() { echo "$BASE/dists/$1/main/binary-$ARCH/Packages"; }
 index_podman_version() {
+  # No early exit in the awk: it must consume the whole stream.
+  # Exiting on the match closes the pipe while curl is still
+  # writing a chunked response; curl then dies with exit 23
+  # (EPIPE, "failure writing output") and pipefail + set -e kill
+  # the script. That race failed 1 of 30 install cells on
+  # 2026-10-15 (smoke 22.04/v5/arm64, orchestrate 38776419215).
   curl -fsSL "$(index_url "$1")" 2>/dev/null | awk \
-    '/^Package: /{p=($2=="podman")} p && /^Version: /{print $2; exit}'
+    '/^Package: /{p=($2=="podman")} p && /^Version: / && !seen {print $2; seen=1}'
 }
 
 apt-get update -qq
