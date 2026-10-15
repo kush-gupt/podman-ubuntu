@@ -13,6 +13,28 @@ permissions:
   issues: write # file the tracking issue
 
 jobs:
+  recover:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close the tracking issue on recovery
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          title="CI failure: $WF_NAME"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --label ci-failure --state open --search "$title" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" \
+              --comment "**$WF_NAME** is green again: $RUN_URL"
+            echo "Closed issue #$existing for $WF_NAME."
+          else
+            echo "No open ci-failure issue for $WF_NAME."
+          fi
+
   alert:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest

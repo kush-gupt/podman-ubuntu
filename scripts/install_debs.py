@@ -38,32 +38,47 @@ def main():
     # without them, which breaks image pulls.
     subprocess.run(["apt-get", "install", "-y", "-qq", "ca-certificates"],
                    check=True)
+
+    def deb_field(deb, field):
+        return subprocess.run(["dpkg-deb", "-f", deb, field],
+                              capture_output=True, text=True,
+                              check=True).stdout.strip()
+
+    def installed_version(pkg):
+        r = subprocess.run(["dpkg-query", "-W", "-f=${Version}", pkg],
+                           capture_output=True, text=True)
+        return r.stdout.strip() if r.returncode == 0 else None
+
+    def verify_local_versions(stage):
+        # The smoke test must test the builds it was given. Fail loudly
+        # if anything (a repo candidate, an Ubuntu revision of the same
+        # upstream version) replaced a local package.
+        for d in debs:
+            pkg, ver = deb_field(d, "Package"), deb_field(d, "Version")
+            got = installed_version(pkg)
+            if got != ver:
+                sys.exit(f"ERROR: {stage}: {pkg} installed version is "
+                         f"{got}, expected the local build {ver}")
+
     # apt (not dpkg -i + install -f): resolves dependencies in one step.
-    # Local debs first (newly built), then ensure the full stack is present:
-    # incremental builds only produce artifacts for changed components, so
-    # unchanged packages resolve from the published repo (configured by the
-    # workflow) rather than the artifacts.
     subprocess.run(["apt-get", "install", "-y", "-qq"]
                    + [f"./{d}" for d in sorted(debs)], check=True)
-    # Hold the just-installed local packages across the fallback install.
-    # The fallback exists to fill gaps from the published repo; it must
-    # never REPLACE a local build. Without holds, a repo that lacks our
-    # build of a package (or Ubuntu shipping a higher revision of the
-    # same upstream version, e.g. aardvark-dns 1.16.0-3 on 26.04) makes
-    # apt "upgrade" the local deb away, and the smoke test ends up
-    # testing someone else's package.
-    pkgs = sorted({subprocess.run(
-        ["dpkg-deb", "-f", d, "Package"], capture_output=True, text=True,
-        check=True).stdout.strip() for d in debs})
-    subprocess.run(["apt-mark", "hold"] + pkgs, check=True,
-                   capture_output=True)
-    try:
-        subprocess.run(["apt-get", "install", "-y", "-qq",
-                        "podman", "passt", "conmon", "crun",
-                        "aardvark-dns"], check=True)
-    finally:
-        subprocess.run(["apt-mark", "unhold"] + pkgs, check=True,
-                       capture_output=True)
+    verify_local_versions("after local install")
+    # Fill gaps only: incremental builds only produce artifacts for
+    # changed components, so a stack package with no local artifact
+    # resolves from the published repo (configured by the workflow).
+    # Naming only the missing packages matters: naming an installed one
+    # invites apt to "upgrade" it to a repo or Ubuntu candidate, which
+    # silently swaps the build under test (Ubuntu's aardvark-dns
+    # 1.16.0-3 on 26.04 did exactly that to our 1.16.0-1~resolute), and
+    # holding the installed ones instead makes apt abort the whole
+    # transaction when its resolution wants to change one.
+    stack = ["podman", "passt", "conmon", "crun", "aardvark-dns"]
+    missing = [p for p in stack if installed_version(p) is None]
+    if missing:
+        subprocess.run(["apt-get", "install", "-y", "-qq"] + missing,
+                       check=True)
+        verify_local_versions("after gap fill")
 
 
 if __name__ == "__main__":
