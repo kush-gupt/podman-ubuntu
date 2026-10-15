@@ -10,12 +10,12 @@ Package: podman-suite
 Architecture: all
 Depends: ${misc:Depends},
          podman (= @PODMAN_VERSION@-1~@SUITE@),
-         conmon,
-         crun,
-         netavark,
-         aardvark-dns,
-         passt,
-         containers-common
+         conmon (>= 2.1.13-1~@SUITE@),
+         crun (>= 1.21-1~@SUITE@),
+         netavark (>= 1.16.0-1~@SUITE@),
+         aardvark-dns (>= 1.16.0-1~@SUITE@),
+         passt (>= 20260925-1~@SUITE@),
+         containers-common (>= 0.67.2-1~@SUITE@)
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

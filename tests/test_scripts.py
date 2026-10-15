@@ -433,3 +433,26 @@ class TestInstallDebsSelection(unittest.TestCase):
             self.assertEqual(len(got_amd), 2)
             self.assertEqual(self.idb.select_debs("v5", "24.04", "arm64",
                                                  root), [])
+
+
+class TestSuiteDependencyFloors(unittest.TestCase):
+    """podman-suite must floor every component at a shipped stack
+    version. Unversioned Depends are satisfied by Ubuntu's older
+    distro components on any host that already has them, which left
+    podman 6.1.4 running with netavark 1.4.0 (unparsable network
+    options), crun 1.14.1 and conmon 2.1.10 on the first real host
+    install (repo-health host-smoke, 2026-10-15). Clean containers
+    never showed it: with nothing preinstalled, apt pulls the whole
+    stack from this repo anyway."""
+
+    def test_suite_template_floors_every_component(self):
+        path = os.path.join(ROOT, "packaging", "podman-suite",
+                            "debian.in", "control")
+        with open(path) as f:
+            text = f.read()
+        for comp in ("conmon", "crun", "netavark", "aardvark-dns",
+                     "passt", "containers-common"):
+            self.assertRegex(
+                text, rf"{comp} \(>= [0-9][^)]*@SUITE@\)",
+                f"podman-suite Depends must floor {comp}")
+        self.assertIn("podman (= @PODMAN_VERSION@-1~@SUITE@)", text)

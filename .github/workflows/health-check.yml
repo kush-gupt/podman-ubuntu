@@ -81,30 +81,18 @@ jobs:
           # match our graph driver \"vfs\""), including the proof run
           # at the end of install_published.sh. Remove the baked-in
           # state so the install starts from a clean slate; the reset
-          # runs again after install, before the smoke. The find/cat
-          # dump keeps the baked-in state visible in the log: the
+          # runs again after install, before the smoke. The find
+          # listing keeps the baked-in state visible in the log: the
           # image's podman 4.9-era state has repeatedly broken the
           # new stack in ways that are only diagnosable from it.
           sudo find /etc/containers /usr/share/containers \
             /var/lib/containers /run/containers /root/.config/containers \
             -type f 2>/dev/null | head -100 || true
-          for f in $(sudo find /etc/containers /usr/share/containers \
-            /var/lib/containers /run/containers -name '*.json' \
-            2>/dev/null); do echo "== $f"; sudo cat "$f"; echo; done
           sudo rm -rf /var/lib/containers/storage
           sudo rm -f /etc/containers/storage.conf
           sudo rm -rf /etc/containers/networks
       - name: Install from the live repository (README recipe, host)
-        run: |
-          sudo bash scripts/install_published.sh stable 24.04 || true
-          echo "== helper binary diagnostics =="
-          grep -rn "helper_binaries_dir" /usr/share/containers/containers.conf /etc/containers/containers.conf 2>/dev/null || true
-          ls -l /usr/lib/podman /usr/libexec/podman 2>/dev/null || true
-          /usr/lib/podman/netavark --version 2>/dev/null || true
-          /usr/libexec/podman/netavark --version 2>/dev/null || true
-          dpkg -S /usr/lib/podman/netavark /usr/libexec/podman/netavark 2>/dev/null || true
-          dpkg -l | grep -iE "netavark|aardvark|containers-common" || true
-          sudo podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || true
+        run: sudo bash scripts/install_published.sh stable 24.04
       - name: Assert the installed podman version
         run: |
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
