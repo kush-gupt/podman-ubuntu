@@ -78,6 +78,18 @@ jobs:
         run: |
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
           podman --version | grep -F "version $EXPECTED"
+      - name: Reset the runner image's baked-in podman storage state
+        run: |
+          # Same baked-in podman 4.9 storage state as in orchestrate's
+          # verify-published-host: podman 6 refuses the mismatched db
+          # ("database graph driver \"\" does not match our graph
+          # driver \"vfs\""), and vfs is not the user default this job
+          # exists to test. Remove both so the freshly installed
+          # podman creates storage with its real default driver; the
+          # smoke asserts that driver is overlay.
+          sudo cat /etc/containers/storage.conf 2>/dev/null || true
+          sudo rm -rf /var/lib/containers/storage
+          sudo rm -f /etc/containers/storage.conf
       - name: Host smoke (overlay, cgroup v2, rootless networking)
         run: |
           # pasta (rootless networking) needs the tun device; the
