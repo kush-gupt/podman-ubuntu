@@ -131,14 +131,14 @@ Version: 5.8.9-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.9-1~jammy), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 5.8.9-1~jammy), conmon (>= 2.1.13-1~jammy), crun (>= 1.21-1~jammy), netavark (>= 1.16.0-1~jammy), aardvark-dns (>= 1.16.0-1~jammy), passt (>= 20260925-1~jammy), containers-common (>= 0.67.2-1~jammy)
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~jammy_all.deb
-Size: 1970
-SHA256: 3f99048e78395772fbab653f33572233f696ff96355167d13adbe5c8c645fd53
-SHA1: 877329a7b1d37cce3ac470c595c04b016635fed6
-MD5sum: 54b9935662ca89cd34a07a8a0c987752
+Size: 2006
+SHA256: 43b6bec87bcd99f61d5a23bd8bc0abb4f59c94fbd9321f5357c2904b24b60624
+SHA1: dde13121f676dc07f2af37dc6307d027351ecad8
+MD5sum: 840e77de22620409faed47ca687a48e9
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

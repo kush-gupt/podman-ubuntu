@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: nightly-2404
 Codename: nightly-2404
-Date: Thu, 15 Oct 2026 23:33:56 UTC
+Date: Thu, 15 Oct 2026 23:59:13 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu nightly track for Ubuntu 24.04
@@ -32,8 +32,8 @@ SHA256:
  fde08ba6b7a43eca14f5fe06d1c676886a03777b9c8a2d29e70951144bedd63e 159 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatFi5AAKCRB8516xqrdY
-E511AP0RDoakZpi3AY5OhhckNQSfXN9k9R64NmtjPHUlrKMKawD/fsKNvCw+E6+5
-eptpIU2rDSn0ITzoTsdGqcb/KEk6MAc=
-=XV6r
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatFo0QAKCRB8516xqrdY
+Ex5AAQCM8jVs12ALTbZQICgj3w9wZaNcPTF15q9RgXxlwrmulwD9FQ3+5UYqgNEZ
+6w7Wcxt9vDSmtF0Qjd578i4SDlzqWgY=
+=0gIE
 -----END PGP SIGNATURE-----

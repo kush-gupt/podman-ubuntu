@@ -78,10 +78,10 @@
         "packaging_sha": "860698df004fec0e7b3b0bb8f3c08a40e91c"
       },
       "5.8.9": {
-        "packaging_sha": "860698df004fec0e7b3b0bb84f30cdc2f9ab"
+        "packaging_sha": "361a5c6f9711ec0e7b3b0bb84f30cdc2f9ab"
       },
       "6.1.4": {
-        "packaging_sha": "860698df004fec0e7b3b0bb84f30cdc2f9ab"
+        "packaging_sha": "361a5c6f9711ec0e7b3b0bb84f30cdc2f9ab"
       }
     },
     "conmon": {

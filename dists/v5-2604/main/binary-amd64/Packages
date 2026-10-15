@@ -131,14 +131,14 @@ Version: 5.8.9-1~resolute
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.9-1~resolute), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 5.8.9-1~resolute), conmon (>= 2.1.13-1~resolute), crun (>= 1.21-1~resolute), netavark (>= 1.16.0-1~resolute), aardvark-dns (>= 1.16.0-1~resolute), passt (>= 20260925-1~resolute), containers-common (>= 0.67.2-1~resolute)
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~resolute_all.deb
-Size: 1982
-SHA256: 3a3b966d875f6d9fd19af40397747779f5eb6e94d11e6c72e97eaabe5ed66f94
-SHA1: edc94fd1ef66e706b2da227ea3006b15867f4ced
-MD5sum: f49f55ddeb7f3ea5d25c5a21634da763
+Size: 2024
+SHA256: 0f6fd87f630ad7b0dc21808dead9398c67ceaa74fc5dc46548f9b4de34b8f60c
+SHA1: 44298a000f5db0ecef343a8316be0a3add3757de
+MD5sum: 37a241a4405e71484d72a972ac35f869
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

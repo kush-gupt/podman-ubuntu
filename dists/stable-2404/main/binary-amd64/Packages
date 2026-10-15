@@ -131,14 +131,14 @@ Version: 6.1.4-1~noble
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 6.1.4-1~noble), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 6.1.4-1~noble), conmon (>= 2.1.13-1~noble), crun (>= 1.21-1~noble), netavark (>= 1.16.0-1~noble), aardvark-dns (>= 1.16.0-1~noble), passt (>= 20260925-1~noble), containers-common (>= 0.67.2-1~noble)
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman-suite/podman-suite_6.1.4-1~noble_all.deb
-Size: 1968
-SHA256: 21f566a5f7cd8b5fea4e6d6fe5ff812bf5ee2057b6537392656102fdd8d0d031
-SHA1: d32fb2fb742a976d1f3a66c93606893d568b4dda
-MD5sum: 39c9f7161b3cc5455f44e351b2aba95a
+Size: 2006
+SHA256: ae0b3464b0cd7066e9a47345e91c190b400fff6b015fdebd56ba3a1791389f13
+SHA1: 22524054fda8a200613cf4484b9e5739f978efc7
+MD5sum: 9afb56f3f5b7c0b9e2568634305517ac
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration
