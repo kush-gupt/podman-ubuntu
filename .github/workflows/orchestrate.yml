@@ -178,13 +178,16 @@ jobs:
   publish:
     needs: [setup, smoke]
     # Publishing mutates the apt-repo branch (including the build
-    # manifest recorded on it) and the Pages deployment: only pushes to
-    # main may do that. PR runs stop after
+    # manifest recorded on it) and the Pages deployment: only main
+    # may do that, via a push or an operator's manual dispatch (the
+    # recovery path when a publish needs re-running). PR runs stop after
     # smoke. The explicit always() is needed because GitHub sometimes skips
     # publish even when all smoke jobs succeed (matrix + if: interaction).
     if: |
       always() &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
       needs.setup.result == 'success' &&
       needs.smoke.result == 'success'
     runs-on: ubuntu-latest
@@ -221,7 +224,9 @@ jobs:
     needs: [setup, publish]
     if: |
       always() &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
       needs.publish.result == 'success'
     timeout-minutes: 30
     strategy:
@@ -277,7 +282,9 @@ jobs:
     needs: [setup, publish]
     if: |
       always() &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
       needs.publish.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
