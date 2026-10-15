@@ -22,6 +22,9 @@
       },
       "6.1.4": {
         "packaging_sha": "a141dddce824ec0e7b3b0bb8f3c08a40e91c"
+      },
+      "7.0.0~git20261015.aa8f845": {
+        "packaging_sha": "a141dddce824ec0e7b3b0bb84f30cdc2f9ab"
       }
     },
     "containers-common": {
