@@ -61,7 +61,15 @@ def main():
                          f"{got}, expected the local build {ver}")
 
     # apt (not dpkg -i + install -f): resolves dependencies in one step.
-    subprocess.run(["apt-get", "install", "-y", "-qq"]
+    # --allow-downgrades: the smoke job's upgrade path installs the
+    # published stack first (from the pin-1001 repo), then installs
+    # these local files over it. Same version, but a local file's
+    # implicit pin (100) is below the installed origin's, so apt
+    # calls the reinstall a downgrade and refuses without the flag.
+    # verify_local_versions below remains the guard: every local
+    # package must end up at exactly the local build's version.
+    subprocess.run(["apt-get", "install", "-y", "-qq",
+                    "--allow-downgrades"]
                    + [f"./{d}" for d in sorted(debs)], check=True)
     verify_local_versions("after local install")
     # Fill gaps only: incremental builds only produce artifacts for
