@@ -204,6 +204,20 @@ if [ "$cur_ver" != "${DEB_VERSION}" ] || [ "$cur_dist" != "$SUITE" ]; then
   fi
 fi
 
+# dch stamps the new entry with the wall clock; it does not honor
+# SOURCE_DATE_EPOCH in this devscripts version. That made every
+# rebuild of the same version produce different bytes: the
+# reproducibility workflow proved two independent conmon builds
+# differed ONLY in the shipped changelog.Debian.gz (trailer dates
+# 16:37:19 vs 16:38:32; the binary was byte-identical). Pin the top
+# entry's trailer date to SOURCE_DATE_EPOCH so a given commit
+# builds byte-identical debs.
+sde_date=$(LC_ALL=C date -u -d "@${SOURCE_DATE_EPOCH}" \
+  "+%a, %d %b %Y %H:%M:%S +0000")
+SDE_DATE="$sde_date" perl -i -pe \
+  'BEGIN { $done = 0 } if (!$done && /^ -- /) { s/  [A-Z][a-z][a-z],.*$/  $ENV{SDE_DATE}/; $done = 1 }' \
+  "$workdir/debian/changelog"
+
 # Build the source package (.dsc + .orig.tar.gz).
 (cd "$workdir" && dpkg-buildpackage -S -uc -us -d)
 
