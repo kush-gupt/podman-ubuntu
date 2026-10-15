@@ -72,22 +72,32 @@ jobs:
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Reset the runner image's baked-in podman storage state
+        run: |
+          # GitHub's runner images preinstall Ubuntu's podman 4.9 and
+          # bake in its storage: a containers/storage db whose recorded
+          # graph driver is empty. Every storage-opening podman call
+          # against it fails ("database graph driver \"\" does not
+          # match our graph driver \"vfs\""), including the proof run
+          # at the end of install_published.sh. Remove the baked-in
+          # state so the install starts from a clean slate; the reset
+          # runs again after install, before the smoke.
+          sudo cat /etc/containers/storage.conf 2>/dev/null || true
+          sudo rm -rf /var/lib/containers/storage
+          sudo rm -f /etc/containers/storage.conf
       - name: Install from the live repository (README recipe, host)
         run: sudo bash scripts/install_published.sh stable 24.04
       - name: Assert the installed podman version
         run: |
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
           podman --version | grep -F "version $EXPECTED"
-      - name: Reset the runner image's baked-in podman storage state
+      - name: Reset podman storage again (install's proof run used vfs)
         run: |
-          # Same baked-in podman 4.9 storage state as in orchestrate's
-          # verify-published-host: podman 6 refuses the mismatched db
-          # ("database graph driver \"\" does not match our graph
-          # driver \"vfs\""), and vfs is not the user default this job
-          # exists to test. Remove both so the freshly installed
-          # podman creates storage with its real default driver; the
-          # smoke asserts that driver is overlay.
-          sudo cat /etc/containers/storage.conf 2>/dev/null || true
+          # install_published.sh proves the published stack with an
+          # explicit --storage-driver=vfs run, which records vfs in
+          # the rootful storage db. The host smoke below tests the
+          # defaults users get and asserts the graph driver is
+          # overlay, so start it from a clean slate again.
           sudo rm -rf /var/lib/containers/storage
           sudo rm -f /etc/containers/storage.conf
       - name: Host smoke (overlay, cgroup v2, rootless networking)
