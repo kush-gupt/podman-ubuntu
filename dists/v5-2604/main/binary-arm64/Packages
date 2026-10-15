@@ -101,19 +101,19 @@ Description: user-mode networking daemons for rootless containers
  Podman 6, replacing slirp4netns.
 
 Package: podman
-Version: 5.8.8-1~resolute
+Version: 5.8.9-1~resolute
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 72073
+Installed-Size: 72137
 Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: podman-docker, containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_5.8.8-1~resolute_arm64.deb
-Size: 21686492
-SHA256: d01d457048bc1c8e9fad34cc4d18e0efa46d0412ebcd5659e21bec7ae7aa3448
-SHA1: af44d82f8942b7eab2a6267b285a61c628a02327
-MD5sum: 8b0f91a35710dc37a01dee2cd747d418
+Filename: pool/main/p/podman/podman_5.8.9-1~resolute_arm64.deb
+Size: 21709294
+SHA256: a3ad219a9b7fd7a417506bc85697f520116beb76f895e727dfc7db85ace05b99
+SHA1: 078e218deb6e389f4222c170b428341b98c976f3
+MD5sum: 952709cf74df801efd4a1555b54809c1
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -124,18 +124,18 @@ Description: daemonless container engine for managing OCI containers
  it to Debian/Ubuntu proper.
 
 Package: podman-suite
-Version: 5.8.8-1~resolute
+Version: 5.8.9-1~resolute
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.8-1~resolute), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 5.8.9-1~resolute), conmon, crun, netavark, aardvark-dns, passt, containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_5.8.8-1~resolute_all.deb
-Size: 1992
-SHA256: 8d912449a3956b586e93cd7da17d75e53882b3d2fee88a13a5e6ab2e7594a55c
-SHA1: f4c77627f1f7280b5c12be8ca1d45e47488ab1b5
-MD5sum: c2b613e277f1e19a0e28be51d70f35d4
+Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~resolute_all.deb
+Size: 1982
+SHA256: f9618a5897354209ad241ce2d62a11c1d5a8a53c7b93e4b83729bc1845e8a1f4
+SHA1: 59b5fd4e575c6957a9331f7755d11096e34c5f30
+MD5sum: 9cd80128d77f39eeb644d0d44b6c4e02
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

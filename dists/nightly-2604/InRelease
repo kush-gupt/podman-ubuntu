@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: nightly-2604
 Codename: nightly-2604
-Date: Thu, 15 Oct 2026 01:36:24 UTC
+Date: Thu, 15 Oct 2026 01:53:53 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu nightly track for Ubuntu 26.04
@@ -32,8 +32,8 @@ SHA256:
  7c8c34f0c5a59c7fd07ccc596eb0b97479755397dc21afad0572d78a2a77b919 159 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatAuGAAKCRB8516xqrdY
-E6mJAP9HUO/vFLOm4J4km/yeGipIio0jMskYbQ9ja7U6y3yhTwD/SKK0snvYzv6l
-fBXiQazAq7UgfIdZKwgKx1a/huLSyQg=
-=9H/a
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatAyMQAKCRB8516xqrdY
+E50QAQD7dnefL5CJ7TGku1gYu7vxzZ0jo2fDSkW7ikJRuZs1dgD/VQA36+Ad2qjP
+r+bgI/0VXmdaVqTaitUzFUg2w0BdMQI=
+=F7D6
 -----END PGP SIGNATURE-----

@@ -5,35 +5,35 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2204
 Codename: stable-2204
-Date: Thu, 15 Oct 2026 01:36:24 UTC
+Date: Thu, 15 Oct 2026 01:53:53 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 22.04
 MD5Sum:
- 3823be6e96fd9503ad0411d93a3a19b5 5586 main/binary-amd64/Packages
- f1fa336413e91249e1af606d40da7b52 2164 main/binary-amd64/Packages.gz
+ 8b9c8cc6612714de3b178ffa51b39af9 5586 main/binary-amd64/Packages
+ b3001fa257c127d43436519a23c501fb 2162 main/binary-amd64/Packages.gz
  fa0c20f0ac359e9b2766622df8bd6d25 157 main/binary-amd64/Release
- 393ff1074e2133e4ebf7fe3078dff985 5585 main/binary-arm64/Packages
- 8b40565c3e5709e4ddb893b576e7d699 2163 main/binary-arm64/Packages.gz
+ d69b2bdff5f40dc2ed6f3b7b0e54895e 5585 main/binary-arm64/Packages
+ 6afe323d8d7efe28f6da694766c5d675 2160 main/binary-arm64/Packages.gz
  6a2daa69724819dd3cd450219f3126b2 157 main/binary-arm64/Release
 SHA1:
- 2a7e3a51dc3915f4a6b054cc06849aa1dbeafe3e 5586 main/binary-amd64/Packages
- 30b4d2cfda8180025ed3dcda9c4e3af9fd0a7229 2164 main/binary-amd64/Packages.gz
+ 2d5b5fcc5cf22e622c9ef7699f319aecf9d01b94 5586 main/binary-amd64/Packages
+ 0f9cee4f1b40c9a03dca1756df2de31983b65bb4 2162 main/binary-amd64/Packages.gz
  3bfba7b7722a054b637ddc464d6b19b90b8edd3a 157 main/binary-amd64/Release
- ab3f8382a9e4f623c3086bf065d6b2c454eede0f 5585 main/binary-arm64/Packages
- e1cd6359f8e949212cdcc33314b5d0aa08e19b9d 2163 main/binary-arm64/Packages.gz
+ 87cda89060f296d95ed095788c920c4c8f08e8a1 5585 main/binary-arm64/Packages
+ dbbda4a141d39f8cd8f994e4c3e29e5d27cade0f 2160 main/binary-arm64/Packages.gz
  372e33a48ede7bd089f32cbe08d6571cd0b752e0 157 main/binary-arm64/Release
 SHA256:
- 8f0e9a1f70cdf613965aa2876b492588853908bd4d7b87547afc954784de9af7 5586 main/binary-amd64/Packages
- 3a99855f882ce40815e59aba96fcac0ba22bf9234f0351b99c5865598e216c7c 2164 main/binary-amd64/Packages.gz
+ 576712a7664f3cd1d56e54127f85a1a2f476078d985e910d744dd0ce33bb0c43 5586 main/binary-amd64/Packages
+ 8ab0b8883974915f0a7682c0383a43c3b152f5af836c304bae6db0fe731b60a8 2162 main/binary-amd64/Packages.gz
  f732abaed7131a1dbcad9db21916b0bcfc3f7e989199a0d0e90c3c40b6b963a4 157 main/binary-amd64/Release
- 3df517b2f15beea653b97ad95cd0eba361c1f109e593f9721af24af8435e6d77 5585 main/binary-arm64/Packages
- d2a873e793e1b7fcaad92e7a49ef4cacc775a2e8ce3959f094dbfc4a9ebaffb9 2163 main/binary-arm64/Packages.gz
+ 82927534905a0102a06434a02e4b4f84333827873adf9c7440280b419528f223 5585 main/binary-arm64/Packages
+ b1237b3ee2ee6acd1b402057446ac16af11335cbd6671455a452f99e6eb9a074 2160 main/binary-arm64/Packages.gz
  c34e7cdf11a9c449a7f8f0ffa66892cf06438ed576d1c58288d368997d9d2098 157 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatAuGAAKCRB8516xqrdY
-E300AP97NzT6UC4/BUap4QMNaeA5nw0IFcCgR8nsNZZC7a/DKAD+NpcX7Vn4vLGO
-6JH6YrwT+dzu3qfhwEBKzAXSDOZWvAE=
-=G3eC
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatAyMQAKCRB8516xqrdY
+E3etAQChDT25VGzpyi2gTudQKRC0l9qS8gfy1Akk4p5Qbp9TZgEA1obd15QhBeD2
+vv2WjsFs7HCGuO+iE0pUXApb4aEVfwE=
+=2EdY
 -----END PGP SIGNATURE-----

@@ -101,19 +101,19 @@ Description: user-mode networking daemons for rootless containers
  Podman 6, replacing slirp4netns.
 
 Package: podman
-Version: 5.8.8-1~jammy
+Version: 5.8.9-1~jammy
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 77945
+Installed-Size: 77993
 Depends: libc6 (>= 2.34), libgpgme11 (>= 1.5.0), libseccomp2 (>= 2.5.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: podman-docker, containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_5.8.8-1~jammy_amd64.deb
-Size: 24422602
-SHA256: 390e07ee99388eb70f64fbbd9bfdb45ac49e775b59d14724b5dec436491bcd9a
-SHA1: 8ebe262ed80b2fb0d19f150f0903829ee526c67c
-MD5sum: 9b248c16f3350b4da30d5c5808c286d5
+Filename: pool/main/p/podman/podman_5.8.9-1~jammy_amd64.deb
+Size: 24446620
+SHA256: a05894c2c5394cab5b1a9de960460b034f79edd67bc3ddf0839c030642d57326
+SHA1: 7563542af2dbc271bda30b43a9d90e027b687d87
+MD5sum: fdd5ae77558fb5e080959eee9e320ff0
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -124,18 +124,18 @@ Description: daemonless container engine for managing OCI containers
  it to Debian/Ubuntu proper.
 
 Package: podman-suite
-Version: 5.8.8-1~jammy
+Version: 5.8.9-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.8-1~jammy), conmon, crun, netavark, aardvark-dns, passt, containers-common
+Depends: podman (= 5.8.9-1~jammy), conmon, crun, netavark, aardvark-dns, passt, containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_5.8.8-1~jammy_all.deb
-Size: 1968
-SHA256: c09be8c6b967f3719a7555380bf7db3ec5fb864e72b2866d57fb495a7647dfa3
-SHA1: fce023f1733dc9e5cac688823796ecf13a89a1b8
-MD5sum: 55e00582ea074c94eb6432d72f1d69cc
+Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~jammy_all.deb
+Size: 1978
+SHA256: 7253b049d519fa2761c1e507fed6c29993c2bbb139ed8ba7e0eddfae98d0a024
+SHA1: 4c173a5a99268948e8a648034352ca81e72bec01
+MD5sum: 4d5a66da04928caaee5e090344901994
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

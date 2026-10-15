@@ -16,6 +16,12 @@
       },
       "6.1.3": {
         "packaging_sha": "a141dddce824ec0e7b3b0bb8f3c08a40e91c"
+      },
+      "5.8.9": {
+        "packaging_sha": "a141dddce824ec0e7b3b0bb8f3c08a40e91c"
+      },
+      "6.1.4": {
+        "packaging_sha": "a141dddce824ec0e7b3b0bb8f3c08a40e91c"
       }
     },
     "containers-common": {
@@ -66,6 +72,12 @@
         "packaging_sha": "860698df004fec0e7b3b0bb8f3c08a40e91c"
       },
       "6.1.3": {
+        "packaging_sha": "860698df004fec0e7b3b0bb8f3c08a40e91c"
+      },
+      "5.8.9": {
+        "packaging_sha": "860698df004fec0e7b3b0bb8f3c08a40e91c"
+      },
+      "6.1.4": {
         "packaging_sha": "860698df004fec0e7b3b0bb8f3c08a40e91c"
       }
     },
