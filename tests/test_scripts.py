@@ -23,6 +23,7 @@ import check_watch_pr  # noqa: E402
 import create_releases  # noqa: E402
 import lib  # noqa: E402
 import publish_repo  # noqa: E402
+import rebase_watch_prs  # noqa: E402
 import verify_upstream_pins  # noqa: E402
 
 
@@ -268,3 +269,23 @@ class BuildMatrix(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestThreeWayMerge(unittest.TestCase):
+    def test_branch_only_and_main_only_changes_combine(self):
+        base = {"a": 1, "b": 2}
+        ours = {"a": 1, "b": 3, "c": 4}    # main changed b, added c
+        theirs = {"a": 9, "b": 2, "d": 5}  # branch changed a, added d
+        self.assertEqual(
+            rebase_watch_prs.three_way_merge(base, ours, theirs, "t"),
+            {"a": 9, "b": 3, "c": 4, "d": 5})
+
+    def test_both_changed_same_key_differently_conflicts(self):
+        with self.assertRaises(rebase_watch_prs.RealConflict):
+            rebase_watch_prs.three_way_merge(
+                {"a": 1}, {"a": 2}, {"a": 3}, "t")
+
+    def test_identical_change_on_both_sides_is_fine(self):
+        self.assertEqual(
+            rebase_watch_prs.three_way_merge(
+                {"a": 1}, {"a": 2}, {"a": 2}, "t"), {"a": 2})
