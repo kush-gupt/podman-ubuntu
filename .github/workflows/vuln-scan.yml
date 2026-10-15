@@ -1,0 +1,51 @@
+# Weekly vulnerability scan of the currently PUBLISHED package set.
+#
+# scripts/scan_published.py collects every unique .deb the live apt
+# repo serves (stable + v5, all suites and arches, deduplicated by
+# pool path), grype scans the directory (its dpkg cataloger reads
+# the control metadata inside each .deb), and the
+# report step files/updates a tracking issue on findings or closes
+# it when clean. The builder image is not scanned: it is rebuilt
+# weekly from the distro base and carries build tools, not the
+# shipped runtime surface.
+#
+# grype is pinned by version AND sha256 (no third-party action).
+name: vuln-scan
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRYPE_VERSION: "0.104.1"
+      GRYPE_SHA256: "2cb820b6c81f88fd6aff3fb4ca5a7161e9ab70af0f27fc5e99cd16deb987cd5f"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Collect the published .debs
+        run: python3 scripts/scan_published.py collect scan-debs
+      - name: Install grype (pinned version + checksum)
+        run: |
+          curl -fsSL "https://github.com/anchore/grype/releases/download/v$GRYPE_VERSION/grype_${GRYPE_VERSION}_linux_amd64.tar.gz" -o /tmp/grype.tgz
+          echo "$GRYPE_SHA256  /tmp/grype.tgz" | sha256sum -c -
+          tar -xzf /tmp/grype.tgz -C /tmp grype
+      - name: Scan
+        # --fail-on never: findings are data for the issue, not a
+        # workflow failure. A scanner ERROR (bad DB, unreadable deb)
+        # still fails via grype's own nonzero exit on error paths
+        # before this step's report is written.
+        run: |
+          /tmp/grype dir:scan-debs --output json=grype.json --output table || true
+          test -s grype.json
+      - name: Report (file/update/close the tracking issue)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/scan_published.py report grype.json --file-issue

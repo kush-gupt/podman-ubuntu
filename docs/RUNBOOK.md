@@ -44,7 +44,13 @@ accept it. The goal is zero overrides.
 The full history is the `apt-repo` branch: `git log apt-repo`, and
 `reprepro -b <checkout> list <suite>` shows exactly what's published. To
 roll back a bad publish: `git revert` the publish commit on `apt-repo` and
-push; Pages redeploys from the branch.
+push; Pages redeploys from the branch. This works because the whole
+reprepro basedir, `db/` included, is committed on that branch, so the
+revert restores the database with the tree. The procedure is drilled
+automatically in `tests/test_reprepro_integration.py`
+(TestRepreproRollbackDrill): publish A, publish B, revert, and the
+exported index, the reprepro database, and a fresh export all serve A
+again.
 
 ## Signing key rotation
 

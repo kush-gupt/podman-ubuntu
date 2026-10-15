@@ -83,6 +83,16 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design,
 [docs/RUNBOOK.md](docs/RUNBOOK.md) for operating it, and
 [docs/SIGNING.md](docs/SIGNING.md) for key management.
 
+## Verify a download
+
+Beyond the apt signature, every published `.deb` carries a GitHub
+build provenance attestation. To verify a `.deb` you downloaded from
+the repository:
+
+```sh
+gh attestation verify <file.deb> --repo kush-gupt/podman-ubuntu
+```
+
 ## Design goals
 
 - **Maintainability**: one file to change per release, declarative tooling

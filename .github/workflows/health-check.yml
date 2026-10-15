@@ -6,7 +6,10 @@
 #
 # Failures surface through ci-failure-alert (this workflow is in its
 # workflow_run list), which reruns once and then opens a ci-failure
-# issue.
+# issue. The key-expiry job additionally files its own issue ahead of
+# the signing subkey's expiry (see scripts/check_key_expiry.py), and
+# the host-smoke job tests the published stack on a real runner host
+# with user defaults (overlay, cgroup v2, rootless networking).
 name: repo-health
 
 on:
@@ -36,6 +39,51 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: python3 scripts/check_live_repo.py
+
+  # Signing subkey expiry: warn at 60 days, escalate at 30, via a
+  # tracking issue (the script files/updates/closes it). The subkey
+  # rotated 2026-10-03 expires 2027-10-03; without this, the first
+  # symptom of expiry would be every publish failing at export.
+  key-expiry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Check signing subkey expiry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/check_key_expiry.py --file-issue
+
+  # Host-level smoke of the published stack: NO job container, so
+  # podman runs with the defaults a user on a real machine gets:
+  # overlay storage driver, real cgroup v2 delegation, and rootless
+  # networking through pasta. The nested-container jobs cannot test
+  # any of those three (vfs + --cgroups=disabled + masked /proc/sys).
+  # The runner host is Ubuntu 24.04; the stable track is the cell.
+  host-smoke:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install from the live repository (README recipe, host)
+        run: sudo bash scripts/install_published.sh stable 24.04
+      - name: Assert the installed podman version
+        run: |
+          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
+          podman --version | grep -F "version $EXPECTED"
+      - name: Host smoke (overlay, cgroup v2, rootless networking)
+        run: |
+          # pasta (rootless networking) needs the tun device; the
+          # runner's smokeuser is not in the tun group.
+          sudo chmod 0666 /dev/net/tun || true
+          sudo env SMOKE_HOST=1 bash scripts/smoke_test.sh
 
   # Full install + deep smoke from the live repo in clean containers,
   # using the documented README recipe (install_published.sh).

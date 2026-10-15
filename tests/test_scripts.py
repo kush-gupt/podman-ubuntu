@@ -18,6 +18,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
+import check_key_expiry  # noqa: E402
 import check_releases  # noqa: E402
 import check_watch_pr  # noqa: E402
 import create_releases  # noqa: E402
@@ -289,3 +290,88 @@ class TestThreeWayMerge(unittest.TestCase):
         self.assertEqual(
             rebase_watch_prs.three_way_merge(
                 {"a": 1}, {"a": 2}, {"a": 2}, "t"), {"a": 2})
+
+
+class TestScanPublished(unittest.TestCase):
+    import scan_published as sp
+
+    def test_parse_index_filenames(self):
+        text = ("Package: crun\nFilename: pool/main/c/crun/crun_1.deb\n\n"
+                "Package: conmon\nFilename: pool/main/c/conmon/conmon_2.deb\n")
+        self.assertEqual(self.sp.parse_index_filenames(text),
+                         {"pool/main/c/crun/crun_1.deb",
+                          "pool/main/c/conmon/conmon_2.deb"})
+
+    def test_summarise_sorts_worst_first(self):
+        grype = {"matches": [
+            {"vulnerability": {"id": "CVE-2", "severity": "Low",
+                               "fix": {"versions": []}},
+             "artifact": {"name": "passt", "version": "1"}},
+            {"vulnerability": {"id": "CVE-1", "severity": "High",
+                               "fix": {"versions": ["2.0"]}},
+             "artifact": {"name": "crun", "version": "1.0"}},
+        ]}
+        out = self.sp.summarise(grype)
+        self.assertEqual([f["id"] for f in out], ["CVE-1", "CVE-2"])
+        self.assertEqual(out[0]["fixed_in"], "2.0")
+        self.assertEqual(self.sp.summarise({"matches": []}), [])
+
+
+class TestComponentWatch(unittest.TestCase):
+    def test_strips_v_prefix_and_picks_newest(self):
+        rels = [rel("v2.2.0"), rel("v2.2.1"), rel("v2.1.0"),
+                rel("v9.9.9", prerelease=True)]
+        self.assertEqual(
+            check_releases.latest_component_version(rels, "v"), "2.2.1")
+
+    def test_crun_tags_have_no_prefix(self):
+        rels = [rel("1.21"), rel("1.30.1"), rel("1.9.0")]
+        self.assertEqual(
+            check_releases.latest_component_version(rels, ""), "1.30.1")
+
+    def test_container_libs_filters_to_common_tags(self):
+        rels = [rel("common/v0.69.2"), rel("common/v0.70.0"),
+                rel("podman/v6.0.0"), rel("image/v5.0.0")]
+        self.assertEqual(
+            check_releases.latest_component_version(rels, "common/v"),
+            "0.70.0")
+
+    def test_upstreams_cover_the_prepare_source_components(self):
+        # Every GitHub-hosted component prepare-source.sh fetches must
+        # be watched (passt is git-based and handled separately).
+        self.assertEqual(
+            sorted(check_releases.COMPONENT_UPSTREAMS),
+            ["aardvark-dns", "conmon", "containers-common", "crun",
+             "netavark"])
+
+
+class TestKeyExpiry(unittest.TestCase):
+    # Colon output captured from the real keys/apt-signing.asc
+    # (gpg --show-keys --with-colons), trimmed to the records the
+    # parser reads.
+    COLONS = (
+        "pub:u:255:22:C64FD8BDD7A7AF10:1791039686:1854111686::u:::cSC:::::ed25519:::0:\n"
+        "fpr:::::::::4A01F97F3F81FE97A40651B6C64FD8BDD7A7AF10:\n"
+        "sub:u:255:22:7CE75EB1AAB75813:1791039686:1822575686:::::s:::::ed25519::\n"
+        "fpr:::::::::4C597668137D76FC625D49117CE75EB1AAB75813:\n"
+    )
+
+    def test_parses_signing_subkey_expiry(self):
+        fpr, expiry = check_key_expiry.parse_subkey_expiry(self.COLONS)
+        self.assertEqual(fpr, "4C597668137D76FC625D49117CE75EB1AAB75813")
+        # 1822575686 == 2027-10-03 (read from the real key, Oct 2026).
+        self.assertEqual(expiry, 1822575686)
+
+    def test_real_key_file_matches(self):
+        fpr, expiry = check_key_expiry.read_key(
+            os.path.join(ROOT, "keys", "apt-signing.asc"))
+        self.assertEqual(fpr, "4C597668137D76FC625D49117CE75EB1AAB75813")
+        self.assertEqual(expiry, 1822575686)
+
+    def test_assess_thresholds(self):
+        self.assertEqual(check_key_expiry.assess(None), "ok")
+        self.assertEqual(check_key_expiry.assess(61), "ok")
+        self.assertEqual(check_key_expiry.assess(60), "warn")
+        self.assertEqual(check_key_expiry.assess(31), "warn")
+        self.assertEqual(check_key_expiry.assess(30), "escalate")
+        self.assertEqual(check_key_expiry.assess(0), "escalate")

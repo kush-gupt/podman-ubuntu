@@ -37,6 +37,12 @@ gpg --list-keys --with-colons <MASTER_FPR> | awk -F: '/^fpr:/ {print $10}'
 
 ## Rotate (yearly, or on suspected compromise)
 
+Expiry is not a surprise: the daily repo-health workflow runs
+`scripts/check_key_expiry.py`, which reads the subkey expiry from
+`keys/apt-signing.asc` and opens a tracking issue 60 days out,
+escalating at 30 days. The issue closes automatically once the
+rotated key lands.
+
 1. Generate a new signing subkey from the master key (step 2 above).
 2. If compromised: publish the revocation certificate from step 3.
 3. Replace the `APT_SIGNING_SUBKEY` secret.

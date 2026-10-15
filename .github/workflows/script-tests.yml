@@ -13,6 +13,7 @@ on:
       - "tests/**"
       - "packaging/components.json"
       - "packaging/*/meta.json"
+      - "packaging/podman/debian/tests/**"
       - "versions.json"
       - "ubuntu-versions.json"
       - ".github/workflows/script-tests.yml"
@@ -46,6 +47,28 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq reprepro
       - name: reprepro stale-replacement integration test
         run: python3 -m unittest tests.test_reprepro_integration -v
+
+  # DEP-8 autopkgtests for the podman package, run against the
+  # currently published stable stack. Backend is null (the testbed is
+  # the job container itself): GitHub runners offer no VM/qemu
+  # backend, and the point is executing the package's own debian/tests
+  # on every PR, including PRs that only touch the tests. Orchestrate's
+  # smoke job runs the same tests against the PR's built .debs.
+  dep8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: ubuntu:24.04
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install the published stable stack
+        run: bash scripts/install_published.sh stable 24.04
+      - name: Run podman DEP-8 tests (null backend)
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq autopkgtest
+          autopkgtest --no-built-binaries packaging/podman -- null
 
   # Network checks against the upstream repos: the pinned stacks must
   # exist upstream and the pinned Go toolchain must satisfy podman's

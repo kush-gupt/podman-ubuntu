@@ -190,6 +190,16 @@ jobs:
           python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
       - name: Deep smoke (versions, basic run, network + DNS, rootless, upgrade report)
         run: bash scripts/smoke_test.sh
+      - name: DEP-8 autopkgtests for podman (null backend, built debs)
+        # Runs the package's own debian/tests against the stack this
+        # job just installed from the built .debs. The null backend
+        # executes in the current (privileged) container: no VM/qemu
+        # backend is available on GitHub runners, and the testbed IS
+        # the system under test here. --no-built-binaries because the
+        # binaries come from the .debs above, not a source build.
+        run: |
+          apt-get install -y -qq autopkgtest
+          autopkgtest --no-built-binaries packaging/podman -- null
 
   publish:
     needs: [setup, smoke]
@@ -291,6 +301,63 @@ jobs:
           podman --version | grep -F "version $EXPECTED"
           test "$(podman --storage-driver=vfs info --format '{{.Host.Arch}}')" = "${{ matrix.arch }}"
           podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from published podman ${{ matrix.track }} (${{ matrix.arch }})"
+
+  # Host-level verification of the published stack: no job container,
+  # so the smoke tests the defaults users get (overlay driver, real
+  # cgroup v2, rootless networking via pasta). The runner host is
+  # Ubuntu 24.04, so this cell covers the stable-2404 suite; the
+  # containerised verify-published matrix above covers the rest.
+  verify-published-host:
+    needs: [setup, publish]
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.publish.result == 'success'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install podman-suite from the published repository (host)
+        run: sudo bash scripts/install_published.sh stable 24.04
+      - name: Host smoke (overlay, cgroup v2, rootless networking)
+        run: |
+          # pasta (rootless networking) needs the tun device; the
+          # runner's smokeuser is not in the tun group.
+          sudo chmod 0666 /dev/net/tun || true
+          sudo env SMOKE_HOST=1 bash scripts/smoke_test.sh
+
+  # Build provenance for the .debs this run published: a signed
+  # attestation per .deb, verifiable with
+  #   gh attestation verify <file.deb> --repo kush-gupt/podman-ubuntu
+  # Attests the exact artifact files the publish job consumed.
+  attest-debs:
+    needs: [setup, publish]
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: debs-*
+          path: debs
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "debs/**/*.deb"
 
   # One GitHub Release per published (track, podman version), with the
   # component stack as the notes, so repo users get a change feed.

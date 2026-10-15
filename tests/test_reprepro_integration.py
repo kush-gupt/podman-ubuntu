@@ -135,6 +135,132 @@ class TestRepreproStaleReplacement(unittest.TestCase):
                           f"{deb} (round two) not in exported index")
 
 
+@unittest.skipUnless(HAVE_TOOLS and shutil.which("git"),
+                     "reprepro/dpkg-deb/git not installed")
+class TestRepreproRollbackDrill(unittest.TestCase):
+    """Rollback drill for the runbook procedure.
+
+    docs/RUNBOOK.md prescribes rolling back a bad publish with
+    `git revert` of the publish commit on the apt-repo branch. That
+    only works if the reprepro basedir is fully versioned, db/
+    included (verified against the real branch: conf, db, dists,
+    keys, manifest.json, pool are all tracked). This test models the
+    apt-repo branch as a git repo, publishes version A, publishes
+    version B over it, reverts the B commit exactly as the runbook
+    says, and asserts clients see A again: the exported index files
+    carry A's checksums, reprepro's own database agrees (list shows
+    A only), and a fresh export does not resurrect B."""
+
+    VERSION_A = "1.0-1~noble"
+    VERSION_B = "1.1-1~noble"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="reprepro-drill-")
+        self.base = os.path.join(self.tmp, "repo")
+        conf = os.path.join(self.base, "conf")
+        os.makedirs(conf)
+        with open(os.path.join(conf, "distributions"), "w") as f:
+            f.write(f"Origin: test\nLabel: test\nCodename: {SUITE}\n"
+                    f"Suite: {SUITE}\nArchitectures: amd64 arm64\n"
+                    f"Components: main\nDescription: drill repo\n")
+        self.git("init", "-q")
+        self.git("config", "user.email", "test@example")
+        self.git("config", "user.name", "Rollback Drill")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def git(self, *args):
+        return subprocess.run(["git", "-C", self.base, *args],
+                              check=True, capture_output=True, text=True)
+
+    def reprepro(self, *args):
+        return subprocess.run(["reprepro", "-b", self.base, *args],
+                              check=True, capture_output=True, text=True)
+
+    def publish(self, version, marker):
+        # make_deb stamps the module-level VERSION, so this class
+        # builds its debs with the version-parameterised variant.
+        debs = []
+        for pkg, arch in (("stackpkg", "amd64"), ("stackpkg", "arm64"),
+                          ("commonpkg", "all")):
+            debs.append(self._make_deb_versioned(pkg, arch, version,
+                                                 marker))
+        for deb in debs:
+            publish_repo.replace_stale(
+                self.base, SUITE,
+                publish_repo.deb_field(deb, "Package"),
+                publish_repo.deb_field(deb, "Version"),
+                publish_repo.deb_field(deb, "Architecture"))
+        self.reprepro("deleteunreferenced")
+        for deb in debs:
+            self.reprepro("includedeb", SUITE, deb)
+        self.reprepro("export")
+        return debs
+
+    def _make_deb_versioned(self, pkg, arch, version, marker):
+        src = os.path.join(self.tmp, f"src-{pkg}-{arch}-{version}")
+        os.makedirs(os.path.join(src, "DEBIAN"), exist_ok=True)
+        os.makedirs(os.path.join(src, "usr", "share", pkg), exist_ok=True)
+        with open(os.path.join(src, "DEBIAN", "control"), "w") as f:
+            f.write(f"Package: {pkg}\nVersion: {version}\n"
+                    f"Architecture: {arch}\nMaintainer: Test <t@example>\n"
+                    f"Section: admin\nPriority: optional\n"
+                    f"Description: fake package for the rollback drill\n")
+        with open(os.path.join(src, "usr", "share", pkg, "marker"),
+                  "w") as f:
+            f.write(marker + "\n")
+        for dirpath, _dirs, _files in os.walk(src):
+            os.chmod(dirpath, 0o755)
+        deb = os.path.join(self.tmp, f"{pkg}_{version}_{arch}.deb")
+        subprocess.run(["dpkg-deb", "--build", "--root-owner-group",
+                        src, deb], check=True, capture_output=True)
+        return deb
+
+    def commit_all(self, msg):
+        self.git("add", "-A")
+        self.git("commit", "-qm", msg)
+
+    def index_text(self, arch="amd64"):
+        path = os.path.join(self.base, "dists", SUITE, "main",
+                            f"binary-{arch}", "Packages")
+        with open(path) as f:
+            return f.read()
+
+    def test_git_revert_rolls_back_a_bad_publish(self):
+        import hashlib
+
+        debs_a = self.publish(self.VERSION_A, "version-a")
+        self.commit_all("apt-repo: publish A")
+        # The drill's premise: reprepro's db is versioned too.
+        tracked = self.git("ls-files").stdout
+        self.assertIn("db/", tracked)
+        digest_a = hashlib.sha256(
+            open(debs_a[0], "rb").read()).hexdigest()
+        self.assertIn(digest_a, self.index_text())
+
+        self.publish(self.VERSION_B, "version-b")
+        self.commit_all("apt-repo: publish B")
+        self.assertIn(self.VERSION_B, self.index_text())
+        self.assertNotIn(digest_a, self.index_text())
+
+        # The runbook rollback, verbatim: revert the publish commit.
+        self.git("revert", "--no-edit", "HEAD")
+
+        # Clients see A again (index files as committed, no re-export).
+        self.assertIn(digest_a, self.index_text())
+        self.assertNotIn(self.VERSION_B, self.index_text())
+        # The database reverted with the tree: list shows A only.
+        listed = publish_repo.parse_listed(
+            self.reprepro("list", SUITE, "stackpkg").stdout)
+        self.assertEqual(listed, {(self.VERSION_A, "amd64"),
+                                   (self.VERSION_A, "arm64")})
+        # And the next publish's export cannot resurrect B.
+        self.reprepro("export")
+        self.assertIn(digest_a, self.index_text())
+        self.assertNotIn(self.VERSION_B, self.index_text())
+
+
 class TestCheckLiveRepo(unittest.TestCase):
     import check_live_repo as clr
 

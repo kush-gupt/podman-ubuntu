@@ -5,7 +5,7 @@ name: ci-failure-alert
 
 on:
   workflow_run:
-    workflows: [orchestrate, nightly, watch-upstream, builder-images, repo-health, reproducibility]
+    workflows: [orchestrate, nightly, watch-upstream, builder-images, repo-health, reproducibility, vuln-scan]
     types: [completed]
 
 permissions:

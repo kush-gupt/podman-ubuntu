@@ -31,22 +31,33 @@ def api(method, path, payload=None):
 branches = api("GET", "/branches?per_page=100")
 watch_branches = [b["name"] for b in branches if b["name"].startswith("watch/")]
 
+def file_at(ref, path):
+    content = api("GET", f"/contents/{path}?ref={ref}")
+    return base64.b64decode(content["content"]).decode()
+
 # Get open PRs
 prs = api("GET", "/pulls?state=open&per_page=100")
 pr_heads = {p["head"]["ref"] for p in prs}
-# Also collect the versions.json content of open watch PRs to detect
-# duplicates (same upstream changes, different branch stamps).
+# Also collect the versions.json + components.json content of open
+# watch PRs to detect duplicates (same upstream changes, different
+# branch stamps). The dedupe key must cover components.json too:
+# component-only watch branches leave versions.json identical to
+# main, and keying on versions alone would mistake a component PR
+# for a duplicate of an unrelated podman PR (and delete its branch).
 pr_versions = {}
 for p in prs:
     head = p["head"]["ref"]
     if not head.startswith("watch/"):
         continue
     try:
-        content = api("GET", f"/contents/versions.json?ref={head}")
-        pr_versions[head] = base64.b64decode(content["content"]).decode()
+        pr_versions[head] = (file_at(head, "versions.json"),
+                             file_at(head, "packaging/components.json"))
     except Exception:
         pass
 seen_versions = set(pr_versions.values())
+
+main_versions = json.loads(file_at("main", "versions.json"))
+main_components = json.loads(file_at("main", "packaging/components.json"))
 
 created = []
 for branch in watch_branches:
@@ -59,10 +70,11 @@ for branch in watch_branches:
         if not files:
             print(f"Skipping {branch}: no diff")
             continue
-        # Get versions.json from the branch to build title
-        content = api("GET", f"/contents/versions.json?ref={branch}")
-        versions_raw = base64.b64decode(content["content"]).decode()
-        if versions_raw in seen_versions:
+        # Get versions.json + components.json from the branch to
+        # build the dedupe key and the title summary.
+        versions_raw = file_at(branch, "versions.json")
+        components_raw = file_at(branch, "packaging/components.json")
+        if (versions_raw, components_raw) in seen_versions:
             print(f"Skipping {branch}: duplicate of an open watch PR, deleting branch")
             try:
                 api("DELETE", f"/git/refs/heads/{branch}")
@@ -70,7 +82,21 @@ for branch in watch_branches:
                 print(f"  could not delete {branch}: {e}")
             continue
         versions = json.loads(versions_raw)
-        summary = f"podman stable: {versions.get('stable')}, v5: {versions.get('v5')}"
+        parts = []
+        if versions != main_versions:
+            parts.append(
+                f"podman stable: {versions.get('stable')}, "
+                f"v5: {versions.get('v5')}")
+        components = json.loads(components_raw)
+        for key in sorted(set(versions.values())):
+            new_stack = components.get(key, {})
+            old_stack = main_components.get(key, {})
+            for comp in sorted(set(new_stack) | set(old_stack)):
+                if new_stack.get(comp) != old_stack.get(comp):
+                    parts.append(
+                        f"{comp} {old_stack.get(comp)} -> "
+                        f"{new_stack.get(comp)} (stack {key})")
+        summary = "; ".join(parts) if parts else f"watch update ({branch})"
     except Exception as e:
         print(f"Skipping {branch}: {e}")
         continue

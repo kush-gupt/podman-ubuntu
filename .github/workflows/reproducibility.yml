@@ -1,29 +1,41 @@
 # Prove the reproducible-builds claim instead of assuming it.
 #
 # SOURCE_DATE_EPOCH pinning, deterministic orig tarballs and
-# -buildvcs=false have been in the pipeline since Oct 2026, but
-# nothing ever rebuilt the same inputs and compared bytes. This
-# workflow builds one fast, representative component (conmon, C, no
-# vendored toolchain deps) twice, on two independent runners, using
-# exactly the build.yml path (builder container, per-component
-# SOURCE_DATE_EPOCH, prepare-source.sh, dpkg-buildpackage), and a
-# third job compares the .deb sha256 hashes. It deliberately does
-# NOT use build.yml itself: build.yml's skip-if-published logic
-# would skip the second build (and usually the first).
+# -buildvcs=false have been in the pipeline since Oct 2026. This
+# workflow builds one component twice, on two independent runners
+# per architecture, using exactly the build.yml path (builder
+# container, per-component SOURCE_DATE_EPOCH, prepare-source.sh,
+# dpkg-buildpackage), and compares the .deb sha256 hashes per arch.
+# It deliberately does NOT use build.yml itself: build.yml's
+# skip-if-published logic would skip the second build (and usually
+# the first).
 #
-# Scope, stated plainly: this verifies .deb byte reproducibility for
-# one component on one (Ubuntu, arch) cell. It does not prove every
-# component reproducible; Go/Rust components have more nondeterminism
-# surface and can be added as matrix cells if this stays green.
+# Component rotation: the component is chosen deterministically by
+# ISO week number over the sorted list of buildable components in
+# the stable stack (see the setup job): index = iso_week mod N.
+# Every component gets proven roughly every N weeks (N=7 today)
+# without paying for a full-matrix double build every week. One
+# component per run, both arches, two builders each: 4 builds.
+#
+# Scope, stated plainly: this verifies .deb byte reproducibility
+# for the week's component on Ubuntu 24.04, amd64 + arm64. A green
+# run does not prove the other components; the rotation is what
+# covers them over time. On a hash mismatch the compare job runs
+# diffoscope (falling back to an extracted-tree diff) and uploads
+# the report as an artifact.
 name: reproducibility
 
 on:
   workflow_dispatch:
+    inputs:
+      component:
+        description: "Component to prove (blank = this week's rotation)"
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
-      - "packaging/conmon/**"
-      - "packaging/common/**"
+      - "packaging/**"
       - "scripts/prepare-source.sh"
       - ".github/workflows/reproducibility.yml"
   schedule:
@@ -33,67 +45,161 @@ permissions:
   contents: read
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      component: ${{ steps.pick.outputs.component }}
+      version: ${{ steps.pick.outputs.version }}
+      extra: ${{ steps.pick.outputs.extra }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - id: pick
+        env:
+          REQUESTED: ${{ inputs.component }}
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          from datetime import date
+          # Buildable = has a prepare-source.sh case and a stack pin.
+          # (podman-suite is a meta-package: nothing to compile.)
+          buildable = ["aardvark-dns", "conmon", "containers-common",
+                       "crun", "netavark", "passt", "podman"]
+          stack = json.load(open("packaging/components.json"))[
+              json.load(open("versions.json"))["stable"]]
+          buildable = [c for c in sorted(buildable) if c in stack]
+          requested = os.environ.get("REQUESTED", "").strip()
+          if requested:
+              component = requested
+          else:
+              week = date.today().isocalendar()[1]
+              component = buildable[week % len(buildable)]
+          out = os.environ["GITHUB_OUTPUT"]
+          with open(out, "a") as f:
+              f.write(f"component={component}\n")
+              f.write(f"version={stack[component]}\n")
+              # passt's prepare-source needs the pinned commit SHA.
+              f.write(f"extra={stack.get('passt_sha', '') if component == 'passt' else ''}\n")
+          print(f"component={component} version={stack[component]}")
+          EOF
+
   build-once:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64]
         run: [1, 2]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 60
     container:
-      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:24.04-amd64
+      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:24.04-${{ matrix.arch }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Trust the workspace for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Build conmon (stable stack pin, Ubuntu 24.04, amd64)
+      - name: Point dependency caches at the workspace
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.ci-cache"
+          echo "CARGO_HOME=$GITHUB_WORKSPACE/.ci-cache/cargo" >> "$GITHUB_ENV"
+          echo "GOMODCACHE=$GITHUB_WORKSPACE/.ci-cache/gomod" >> "$GITHUB_ENV"
+          echo "GOCACHE=$GITHUB_WORKSPACE/.ci-cache/gobuild" >> "$GITHUB_ENV"
+      - name: Restore cargo registry cache
+        if: needs.setup.outputs.component == 'netavark' || needs.setup.outputs.component == 'aardvark-dns'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .ci-cache/cargo
+          key: cargo-registry-${{ hashFiles('packaging/components.json') }}
+          restore-keys: |
+            cargo-registry-
+      - name: Restore Go module and build caches
+        if: needs.setup.outputs.component == 'podman'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            .ci-cache/gomod
+            .ci-cache/gobuild
+          key: go-${{ hashFiles('packaging/components.json') }}
+          restore-keys: |
+            go-
+      - name: Build the component (stable stack pin, Ubuntu 24.04)
         env:
           DEB_BUILD_OPTIONS: nocheck noddebsym
           GOFLAGS: -buildvcs=false
+          COMPONENT: ${{ needs.setup.outputs.component }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          EXTRA: ${{ needs.setup.outputs.extra }}
         run: |
-          VERSION=$(python3 -c "
-          import json
-          stable = json.load(open('versions.json'))['stable']
-          print(json.load(open('packaging/components.json'))[stable]['conmon'])
-          ")
-          echo "conmon version: $VERSION"
-          # Same SOURCE_DATE_EPOCH rule as build.yml: last commit
-          # touching this component's packaging inputs.
-          sde=$(git log -1 --format=%ct -- packaging/conmon packaging/common scripts/prepare-source.sh)
+          echo "building $COMPONENT $VERSION (SOURCE_DATE_EPOCH pinned as in build.yml)"
+          sde=$(git log -1 --format=%ct -- \
+            "packaging/$COMPONENT" packaging/common scripts/prepare-source.sh)
           export SOURCE_DATE_EPOCH="${sde:-$(git log -1 --format=%ct)}"
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
-          bash scripts/prepare-source.sh conmon "$VERSION" 24.04
-          cd "build/src/conmon-$VERSION"
+          bash scripts/prepare-source.sh "$COMPONENT" "$VERSION" 24.04 "$EXTRA"
+          cd "build/src/$COMPONENT-$VERSION"
           dpkg-buildpackage -b -uc -us -d
           cd "$GITHUB_WORKSPACE"
           ls build/src/*.deb
-          sha256sum build/src/*.deb | sed "s|$GITHUB_WORKSPACE/||;s|build/src/||" > hashes.txt
+          (cd build/src && sha256sum *.deb) > hashes.txt
           cat hashes.txt
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: repro-hashes-${{ matrix.run }}
+          name: repro-${{ matrix.arch }}-${{ matrix.run }}
           path: |
             hashes.txt
             build/src/*.deb
 
   compare:
-    needs: build-once
+    needs: [setup, build-once]
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          pattern: repro-hashes-*
+          pattern: repro-${{ matrix.arch }}-*
           path: hashes
       - name: Compare the two independent builds byte for byte
+        id: cmp
+        env:
+          ARCH: ${{ matrix.arch }}
+          COMPONENT: ${{ needs.setup.outputs.component }}
         run: |
-          cat hashes/repro-hashes-1/hashes.txt
-          cat hashes/repro-hashes-2/hashes.txt
-          if diff -u hashes/repro-hashes-1/hashes.txt hashes/repro-hashes-2/hashes.txt; then
-            echo "REPRODUCIBLE: two independent conmon builds are byte-identical"
+          cat "hashes/repro-$ARCH-1/hashes.txt"
+          cat "hashes/repro-$ARCH-2/hashes.txt"
+          if diff -u "hashes/repro-$ARCH-1/hashes.txt" "hashes/repro-$ARCH-2/hashes.txt"; then
+            echo "REPRODUCIBLE: two independent $COMPONENT builds ($ARCH) are byte-identical"
           else
-            echo "ERROR: conmon .deb hashes differ between independent builds" >&2
+            echo "ERROR: $COMPONENT .deb hashes differ between independent builds ($ARCH)" >&2
             exit 1
           fi
+      - name: Diagnose the mismatch (diffoscope, extracted-tree fallback)
+        if: failure() && steps.cmp.outcome == 'failure'
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p report a b
+          deb1=$(ls hashes/repro-$ARCH-1/*.deb | head -1)
+          deb2=$(ls hashes/repro-$ARCH-2/*.deb | head -1)
+          echo "run 1: $deb1" > report/report.txt
+          echo "run 2: $deb2" >> report/report.txt
+          if sudo apt-get update -qq && sudo apt-get install -y -qq diffoscope >/dev/null 2>&1; then
+            diffoscope --html report/diffoscope.html "$deb1" "$deb2" >> report/report.txt 2>&1 || true
+          else
+            echo "diffoscope unavailable; extracted-tree diff:" >> report/report.txt
+            dpkg-deb -x "$deb1" a && dpkg-deb -x "$deb2" b
+            diff -ruN a b >> report/report.txt 2>&1 || true
+            (cd a && find . -type f | sort | xargs -r sha256sum) > report/run1.files 2>/dev/null || true
+            (cd b && find . -type f | sort | xargs -r sha256sum) > report/run2.files 2>/dev/null || true
+            diff -u report/run1.files report/run2.files >> report/report.txt 2>&1 || true
+          fi
+          ls -la report/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: failure() && steps.cmp.outcome == 'failure'
+        with:
+          name: repro-report-${{ matrix.arch }}
+          path: report/

@@ -30,6 +30,8 @@ Published to the apt repository for suites: {suites} (amd64 + arm64).
 {rows}
 
 Install or upgrade with the [README instructions](https://github.com/kush-gupt/podman-ubuntu#readme) (`sudo apt install podman-suite`).
+
+The published .debs carry GitHub build provenance attestations; verify a downloaded .deb with `gh attestation verify <file.deb> --repo kush-gupt/podman-ubuntu`.
 """
 
 

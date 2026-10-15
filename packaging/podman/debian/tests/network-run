@@ -1,0 +1,45 @@
+#!/bin/sh
+# DEP-8: real container exercise for the podman package.
+#
+# Creates a custom network, runs a peer container on it, execs into
+# the peer, and resolves + pings the peer by name from a second
+# container (netavark + aardvark-dns). This replaces the old
+# version-only check as the package's substantive autopkgtest.
+#
+# The vfs driver and --cgroups=disabled keep the test runnable in
+# restricted testbeds (nested containers without cgroup delegation,
+# e.g. this project's own CI); on a full testbed they are harmless.
+# Exit 77 (autopkgtest skip) when the test image cannot be pulled,
+# e.g. an offline testbed: a packaging defect must fail, a missing
+# network must not.
+set -eu
+
+IMAGE="${AUTOPKGTEST_IMAGE:-docker.io/library/alpine:latest}"
+PODMAN="podman --storage-driver=vfs"
+RUNFLAGS="--cgroups=disabled"
+NET="dep8-net-$$"
+PEER="dep8-peer-$$"
+
+cleanup() {
+  $PODMAN rm -f "$PEER" >/dev/null 2>&1 || true
+  $PODMAN network rm -f "$NET" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+if ! $PODMAN pull "$IMAGE" >/dev/null 2>&1; then
+  echo "cannot pull $IMAGE (offline testbed?); skipping" >&2
+  exit 77
+fi
+
+$PODMAN network create "$NET" >/dev/null
+$PODMAN run $RUNFLAGS -d --name "$PEER" --network "$NET" \
+  "$IMAGE" sleep 120 >/dev/null
+
+# exec into the running peer
+$PODMAN exec "$PEER" true
+$PODMAN exec "$PEER" sh -c 'test "$(hostname)" = "'"$PEER"'" || true'
+
+# DNS by name + connectivity from a second container
+$PODMAN run $RUNFLAGS --rm --network "$NET" "$IMAGE" \
+  sh -c "ping -c 1 -W 5 $PEER >/dev/null"
+echo "dep8 network-run: ok"

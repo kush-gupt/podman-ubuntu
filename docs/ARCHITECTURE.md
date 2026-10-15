@@ -9,7 +9,11 @@ repository, with packaging shaped from day one for acceptance into Debian
 ## Data flow
 
 ```
-upstream releases ──watch.yml──▶ PR (versions.json, ubuntu-versions.json)
+upstream releases ──watch.yml──▶ PR (versions.json, ubuntu-versions.json,
+                         │        packaging/components.json pins: the
+                         │        watch also tracks new upstream tags
+                         │        of crun, conmon, netavark, aardvark-dns,
+                         │        containers-common, and passt HEAD)
                                         │
 merge ──orchestrate.yml──▶ setup: build_matrix.py ──▶ matrices
                                         │
@@ -88,15 +92,36 @@ linger with stale packages.
 - `repo-health` (daily, plus on demand): `scripts/check_live_repo.py`
   asserts every live suite's Packages index is complete (the full
   8-package stack for stable/v5, podman for nightly), and a matrix job
-  installs from the live repository and runs the deep smoke. Failures
-  go through `ci-failure-alert` like other CI failures.
-- `reproducibility` (weekly and on packaging changes): builds conmon
-  twice on independent runners through the same builder-container path
-  as `build.yml` and compares .deb sha256 hashes.
+  installs from the live repository and runs the deep smoke. A
+  host-smoke job installs on the runner host itself (no job
+  container) and runs `scripts/smoke_test.sh` with `SMOKE_HOST=1`,
+  which asserts the defaults users get: overlay storage driver,
+  cgroup v2, and rootless networking via pasta. A key-expiry job
+  files an issue 60 days before the signing subkey expires
+  (`scripts/check_key_expiry.py`). Failures go through
+  `ci-failure-alert` like other CI failures.
+- `reproducibility` (weekly and on packaging changes): builds one
+  component twice per architecture on independent runners through
+  the same builder-container path as `build.yml` and compares .deb
+  sha256 hashes. The component rotates deterministically by ISO
+  week over the buildable components; a mismatch produces a
+  diffoscope report artifact.
+- DEP-8 autopkgtests: the podman package's `debian/tests` run in CI
+  (`autopkgtest --no-built-binaries ... -- null`, the null backend
+  being what GitHub runners support) against the built .debs in
+  orchestrate's smoke job and against the published stack in
+  `script-tests.yml`, so a PR that breaks a DEP-8 test goes red.
+- `vuln-scan` (weekly): collects every published .deb and scans it
+  with grype; findings open a tracking issue, a clean scan closes it.
+  Published .debs also carry GitHub build provenance attestations
+  (orchestrate's `attest-debs` job): verify with
+  `gh attestation verify <file.deb> --repo kush-gupt/podman-ubuntu`.
 - The reprepro stale-replacement logic in `publish_repo.py` has a real
   reprepro integration test (`tests/test_reprepro_integration.py`),
   run by `script-tests.yml`; it encodes the manual sims that proved
-  the October 2026 arch-blind and arch-all publish bugs.
+  the October 2026 arch-blind and arch-all publish bugs. The same
+  file drills the runbook rollback (`git revert` of a publish commit
+  on the apt-repo branch) end to end.
 
 ## Debian/Ubuntu acceptance path
 
