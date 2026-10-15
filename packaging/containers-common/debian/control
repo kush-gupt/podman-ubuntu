@@ -9,6 +9,9 @@ Rules-Requires-Root: no
 Package: containers-common
 Architecture: all
 Depends: ${misc:Depends}
+Provides: golang-github-containers-common
+Replaces: golang-github-containers-common
+Breaks: golang-github-containers-common
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
