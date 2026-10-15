@@ -61,9 +61,14 @@ trap - EXIT
 
 echo "== rootless run =="
 rootless_ok=0
+rootless_mode=""
 if [ "$(id -u)" != "0" ]; then
   if $PODMAN run $RUNFLAGS --rm "$IMAGE" echo "smoke: rootless ok"; then
     rootless_ok=1
+    rootless_mode="networked"
+  elif $PODMAN run $RUNFLAGS --network=none --rm "$IMAGE" echo "smoke: rootless ok"; then
+    rootless_ok=1
+    rootless_mode="no-network"
   fi
 else
   # Rootless podman needs newuidmap (uidmap package); the minimal
@@ -83,19 +88,35 @@ else
       echo 'smokeuser:100000:65536' >> /etc/subgid || true
     mkdir -p /tmp/smoke-xdg
     chown smokeuser:smokeuser /tmp/smoke-xdg || true
-    if runuser -u smokeuser -- env HOME=/home/smokeuser \
+    run_rootless() {
+      runuser -u smokeuser -- env HOME=/home/smokeuser \
         XDG_RUNTIME_DIR=/tmp/smoke-xdg \
-        podman --storage-driver=vfs run $RUNFLAGS --rm "$IMAGE" \
-        echo "smoke: rootless ok" > /tmp/smoke-rootless.log 2>&1; then
+        podman --storage-driver=vfs run $RUNFLAGS "$@" --rm "$IMAGE" \
+        echo "smoke: rootless ok"
+    }
+    if run_rootless > /tmp/smoke-rootless.log 2>&1; then
       cat /tmp/smoke-rootless.log
       rootless_ok=1
+      rootless_mode="networked"
+    elif run_rootless --network=none > /tmp/smoke-rootless.log 2>&1; then
+      # Rootless execution works; rootless NETWORKING does not in
+      # this nested container: pasta cannot open the outer
+      # container's masked /proc/sys (ip_local_port_range) or the
+      # netns. Report that distinction explicitly instead of
+      # failing or silently skipping the whole section.
+      cat /tmp/smoke-rootless.log
+      rootless_ok=1
+      rootless_mode="no-network"
+      echo "::warning title=smoke-rootless::rootless networking unsupported in this nested environment (pasta/netns permission denied); rootless execution proven with --network=none"
     else
       echo "rootless run failed; last log lines:"
       tail -20 /tmp/smoke-rootless.log || true
     fi
   fi
 fi
-if [ "$rootless_ok" = "1" ]; then
+if [ "$rootless_ok" = "1" ] && [ "$rootless_mode" = "no-network" ]; then
+  echo "SMOKE-ROOTLESS: PASS (execution, --network=none; rootless networking unsupported in this environment, reported above)"
+elif [ "$rootless_ok" = "1" ]; then
   echo "SMOKE-ROOTLESS: PASS"
 elif [ "${SMOKE_STRICT_ROOTLESS:-0}" = "1" ]; then
   echo "SMOKE-ROOTLESS: FAIL (strict mode)" >&2
