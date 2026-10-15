@@ -8,8 +8,8 @@ Artifact dirs carry a meta.json sidecar (written by build.yml); grouping and
 suite assignment read it instead of parsing directory names.
 
 Steps: gather -> reprepro includedeb per suite -> prune to newest 3 ->
-       sign -> commit+push apt-repo branch -> stage apt-repo-publish/ ->
-       record manifest.json on main. Stdlib only.
+       sign -> record manifest.json on the apt-repo branch -> commit+push
+       apt-repo branch -> stage apt-repo-publish/. Stdlib only.
 """
 import base64
 import glob
@@ -39,6 +39,22 @@ def run(*args, check=True, **kwargs):
 def git(*args, cwd=REPO_ROOT, check=True):
     return run("git", *args, cwd=cwd, check=check,
                capture_output=True, text=True)
+
+
+def parse_listed(output):
+    """Parse `reprepro list` output into {(version, architecture)}.
+
+    Lines look like "stable-2404|main|amd64: crun 1.30.1-1~noble"
+    (suite|component|architecture). The architecture token is the one
+    reprepro recorded for the package (its own Architecture field),
+    which is what a removefilter Architecture term must match."""
+    entries = set()
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and "|" in parts[0]:
+            arch = parts[0].rsplit("|", 1)[1].rstrip(":")
+            entries.add((parts[2], arch))
+    return entries
 
 
 def main():
@@ -124,6 +140,14 @@ def main():
     for track in tracks:
         for uv in ubuntus:
             existing[f"{track}-{flat(uv)}"] = stanza(track, uv)
+    # End-of-life cleanup: drop stanzas for Ubuntu releases that left
+    # ubuntu-versions.json, for every track (the additive merge above
+    # would otherwise keep publishing them forever with stale packages).
+    # clearvanished below purges their db entries and dists/ files.
+    keep = set(lib.kept_codenames(list(existing), lib.ubuntu_releases()))
+    for codename in sorted(set(existing) - keep):
+        print(f"dropping end-of-life suite {codename}", flush=True)
+        del existing[codename]
     with open(dist_path, "w") as f:
         f.write("\n".join(existing[c] for c in sorted(existing)) + "\n")
     with open(os.path.join(aptd, "conf", "options"), "w") as f:
@@ -134,6 +158,9 @@ def main():
              text=True, check=False)
     print(cv.stdout, flush=True)
     print(cv.stderr, flush=True)
+    # Pool files of vanished suites are unreferenced now; drop them too.
+    run("reprepro", "-b", aptd, "deleteunreferenced",
+        capture_output=True, text=True, check=False)
 
     # --- include debs ------------------------------------------------------
     # Artifacts download to debs/debs-*/ (actions/download-artifact nests each
@@ -156,11 +183,78 @@ def main():
         key = (m["component"], m["version"], m["ubuntu"], m["arch"])
         g = groups.setdefault(key, {"dir": d, "tracks": set()})
         g["tracks"].add(m["track"])
+
+    def deb_field(deb, field):
+        return run("dpkg-deb", "-f", deb, field,
+                   capture_output=True, text=True).stdout.strip()
+
+    def listed_hits(suite, pkg, dver, darch):
+        """Recorded architectures under which (pkg, dver) is listed in
+        `suite`, restricted to entries a replacement of the (darch)
+        build must remove. Matching is per architecture: a filter
+        without an Architecture term removes EVERY architecture's
+        entry, so replacing the amd64 build and then the arm64 build
+        of the same version left only arm64 in the repo (the arm64
+        pass deleted the just-included amd64 entry). Note reprepro
+        lists an arch-all package once per suite architecture, so its
+        recorded tokens are the binary arches, never "all"."""
+        out = run("reprepro", "-b", aptd, "list", suite, pkg,
+                  capture_output=True, text=True).stdout
+        return sorted({a for (v, a) in parse_listed(out)
+                       if v == dver
+                       and (a == darch or darch == "all" or a == "all")})
+
     for (comp, ver, ubuntu, arch) in sorted(groups):
         g = groups[(comp, ver, ubuntu, arch)]
+        debs = sorted(glob.glob(os.path.join(g["dir"], "*.deb")))
+        # A rebuild of an already-published (package, version) produces
+        # different bytes (the builds are not reproducible), and reprepro
+        # refuses to include a pool file whose checksums differ from the
+        # copy already published ("Already existing files can only be
+        # included again, if they are the same"). That is exactly what a
+        # packaging-only fix triggers: same version, new bytes. Remove the
+        # stale entry from every suite this run publishes and drop the
+        # unreferenced pool file, so the fresh build can land.
+        run_suites = [f"{t}-{flat(ubuntu)}" for t in tracks]
+        for deb in debs:
+            pkg = deb_field(deb, "Package")
+            dver = deb_field(deb, "Version")
+            darch = deb_field(deb, "Architecture")
+            removed = False
+            for suite in run_suites:
+                if listed_hits(suite, pkg, dver, darch):
+                    # removefilter targets one exact version; plain
+                    # `remove suite pkg=version` silently matches
+                    # nothing (it parses the whole string as a package
+                    # name). The Architecture term is load-bearing and
+                    # must be the DEB's architecture: without it the
+                    # filter removes every architecture's entry, and
+                    # for arch-all packages the recorded tokens are
+                    # the suite's binary arches, so filtering on a
+                    # recorded token instead of "all" matches nothing.
+                    run("reprepro", "-b", aptd, "removefilter", suite,
+                        f"Package (== {pkg}), Version (== {dver}), "
+                        f"Architecture (== {darch})",
+                        capture_output=True, text=True)
+                    removed = True
+                    # removefilter returns success even when it
+                    # matched nothing; verify the entry is actually
+                    # gone, or the includedeb below fails with a
+                    # checksum error that hides the real cause.
+                    left = listed_hits(suite, pkg, dver, darch)
+                    if left:
+                        print(f"ERROR: stale {pkg} {dver} still listed "
+                              f"in {suite} under {left} after "
+                              f"removefilter (arch {darch})", flush=True)
+                        sys.exit(1)
+            if removed:
+                run("reprepro", "-b", aptd, "deleteunreferenced",
+                    capture_output=True, text=True)
+                print(f"replaced stale {pkg} {dver} (Ubuntu {ubuntu}, "
+                      f"{arch})", flush=True)
         for track in sorted(g["tracks"]):
             suite = f"{track}-{flat(ubuntu)}"
-            for deb in sorted(glob.glob(os.path.join(g["dir"], "*.deb"))):
+            for deb in debs:
                 r = run("reprepro", "-b", aptd, "includedeb", suite, deb,
                         capture_output=True, text=True, check=False)
                 if r.returncode != 0:
@@ -196,14 +290,44 @@ def main():
                          capture_output=True, text=True).stdout.splitlines()),
                     key=cmp_to_key(deb_cmp))
                 for old in vers[:-3]:
-                    run("reprepro", "-b", aptd, "remove", suite,
-                        f"{pkg}={old}", check=False, capture_output=True)
+                    # removefilter, not `remove pkg=version`: the latter
+                    # silently matches nothing, so pruning never actually
+                    # removed anything.
+                    run("reprepro", "-b", aptd, "removefilter", suite,
+                        f"Package (== {pkg}), Version (== {old})",
+                        check=False, capture_output=True)
                     print(f"pruned {pkg} {old} from {suite}", flush=True)
 
     # --- sign + publish key ---------------------------------------------------
     run("reprepro", "-b", aptd, "export", capture_output=True)
     shutil.copy("keys/apt-signing.asc",
                 os.path.join(aptd, "keys", "apt-signing.asc"))
+
+    # --- record the manifest on the apt-repo branch -------------------------
+    # Records (component, version) -> packaging_sha so future builds skip
+    # only when both the upstream version AND the packaging inputs are
+    # unchanged. (A packaging-only fix like a debian/rules change must
+    # trigger a rebuild; a version-only key would silently ship stale
+    # debs.) The manifest is machine state: it lives on the apt-repo
+    # branch and lands atomically with the debs it describes. It used to
+    # be committed to main by this job, but required status checks on
+    # main reject the bot's direct push, and the extra commits raced
+    # human pushes besides.
+    mpath = os.path.join(aptd, "manifest.json")
+    if os.path.exists(mpath):
+        with open(mpath) as f:
+            manifest = json.load(f)
+    else:  # migration seed: main's last hand-off copy
+        with open("manifest.json") as f:
+            manifest = json.load(f)
+    built = manifest.setdefault("built", {})
+    for _d, m in artifacts:
+        built.setdefault(m["component"], {})[m["version"]] = {
+            "packaging_sha": lib.packaging_sha(m["component"]),
+        }
+    with open(mpath, "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
 
     run("git", "add", "-A", cwd=aptd)
     run("git", *BOT, "commit", "-m",
@@ -218,26 +342,6 @@ def main():
         "--exclude", ".git", "--exclude", ".gnupg",
         f"{aptd}/", f"{stage}/")
 
-    # --- record manifest on main --------------------------------------------------
-    # Records (component, version) -> packaging_sha so future builds skip only
-    # when both the upstream version AND the packaging inputs are unchanged.
-    # (A packaging-only fix like a debian/rules change must trigger a rebuild;
-    # a version-only key would silently ship stale debs.)
-    with open("manifest.json") as f:
-        manifest = json.load(f)
-    built = manifest.setdefault("built", {})
-    for _d, m in artifacts:
-        built.setdefault(m["component"], {})[m["version"]] = {
-            "packaging_sha": lib.packaging_sha(m["component"]),
-        }
-    with open("manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
-        f.write("\n")
-    run("git", "add", "manifest.json")
-    run("git", *BOT, "commit", "-m",
-        "chore: record published builds in manifest.json",
-        check=False, capture_output=True)
-    run("git", "push", "origin", "main")
     run("git", "worktree", "remove", "--force", "apt-repo")
 
     print("Publish complete.")

@@ -80,7 +80,7 @@ for branch in watch_branches:
         "title": f"chore(watch): {summary}",
         "head": branch,
         "base": "main",
-        "body": f"Automated upstream watch found changes in {', '.join(files)}.\n\n## Release checklist\n\n- [ ] Fill dependency pins in `packaging/components.json`\n- [ ] Bump toolchain versions if needed\n- [ ] Merging triggers the build matrix.",
+        "body": f"Automated upstream watch found changes in {', '.join(files)}.\n\nDependency pins for new podman versions are seeded in `packaging/components.json` by carrying the previous release's stack forward.\n\n## Release checklist\n\n- [ ] Verify the seeded dependency pins in `packaging/components.json` against the upstream release notes\n- [ ] Bump toolchain versions in the seeded stack if the release notes require it\n- [ ] Merging triggers the build matrix.",
     })
     if pr:
         created.append((pr["number"], branch))

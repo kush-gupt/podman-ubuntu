@@ -1,0 +1,66 @@
+# React to failed CI: rerun the failed jobs once (most build failures here
+# are transient: registry/proxy flakes, runner network), and if the rerun
+# also fails, open or update a tracking issue so failures stop being silent.
+name: ci-failure-alert
+
+on:
+  workflow_run:
+    workflows: [orchestrate, nightly, watch-upstream, builder-images]
+    types: [completed]
+
+permissions:
+  actions: write # rerun failed jobs
+  issues: write # file the tracking issue
+
+jobs:
+  recover:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close the tracking issue on recovery
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          title="CI failure: $WF_NAME"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --label ci-failure --state open --search "$title" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" \
+              --comment "**$WF_NAME** is green again: $RUN_URL"
+            echo "Closed issue #$existing for $WF_NAME."
+          else
+            echo "No open ci-failure issue for $WF_NAME."
+          fi
+
+  alert:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rerun once, then open an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          if [ "$ATTEMPT" -lt 2 ]; then
+            echo "Attempt $ATTEMPT of $WF_NAME failed; rerunning failed jobs once."
+            gh run rerun "$RUN_ID" --failed --repo "$GITHUB_REPOSITORY"
+            exit 0
+          fi
+          title="CI failure: $WF_NAME"
+          body="Workflow **$WF_NAME** failed, and the automatic rerun failed too. Latest run: $RUN_URL"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --label ci-failure --state open --search "$title" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" \
+              --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$title" --label ci-failure --body "$body"
+          fi

@@ -13,22 +13,38 @@ on:
     branches: [main]
     paths:
       - "versions.json"
-      - "components.json"
       - "ubuntu-versions.json"
       - "packaging/**"
-      - "scripts/**"
+      # Only the scripts the build/publish pipeline actually executes.
+      # Tooling that runs elsewhere (check_releases.py in watch.yml,
+      # create_watch_prs.py from an external cron) must not fan out a
+      # full build matrix when it changes; script-tests.yml covers it.
+      - "scripts/build_matrix.py"
+      - "scripts/create_releases.py"
+      - "scripts/install_debs.py"
+      - "scripts/is_built.py"
+      - "scripts/lib.py"
+      - "scripts/prepare-source.sh"
+      - "scripts/publish_repo.py"
+      - ".github/workflows/build.yml"
       - ".github/workflows/orchestrate.yml"
   # PRs run the same build+smoke matrix against themselves so packaging
   # changes are validated before merge. The publish job is gated to pushes
-  # below: PRs never touch the apt-repo branch, Pages, or main's manifest.
+  # below: PRs never touch the apt-repo branch or Pages.
   pull_request:
     branches: [main]
     paths:
       - "versions.json"
-      - "components.json"
       - "ubuntu-versions.json"
       - "packaging/**"
-      - "scripts/**"
+      - "scripts/build_matrix.py"
+      - "scripts/create_releases.py"
+      - "scripts/install_debs.py"
+      - "scripts/is_built.py"
+      - "scripts/lib.py"
+      - "scripts/prepare-source.sh"
+      - "scripts/publish_repo.py"
+      - ".github/workflows/build.yml"
       - ".github/workflows/orchestrate.yml"
   workflow_dispatch:
     inputs:
@@ -51,7 +67,7 @@ jobs:
       level1: ${{ steps.matrix.outputs.level1 }}
       suites: ${{ steps.matrix.outputs.suites }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - id: matrix
         run: python3 scripts/build_matrix.py
         env:
@@ -106,13 +122,16 @@ jobs:
       matrix:
         ubuntu_version: ${{ fromJSON(needs.setup.outputs.suites).ubuntu }}
         track: ${{ fromJSON(needs.setup.outputs.suites).tracks }}
-    runs-on: ubuntu-latest
+        # arm64 cells run on arm64 runners so the arm64 debs get the
+        # same install + run test as amd64 instead of shipping untested.
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     container:
       image: ubuntu:${{ matrix.ubuntu_version }}
       options: --privileged
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: debs-*
           path: debs
@@ -136,8 +155,8 @@ jobs:
           # Pin our repo above Ubuntu's: Ubuntu 26.04 ships aardvark-dns
           # 1.16.0-3 which outranks our 1.16.0-1~resolute (the ~ sorts lower),
           # but Ubuntu's installs to a different path. Prefer ours.
-          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 900\n' > /etc/apt/preferences.d/podman-ubuntu
-          python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
+          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
+          python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
       - run: |
           # Every binary in the stack reports a version. netavark and
           # aardvark-dns live in libexec, not PATH.
@@ -158,13 +177,17 @@ jobs:
 
   publish:
     needs: [setup, smoke]
-    # Publishing mutates the apt-repo branch, the Pages deployment, and
-    # main's manifest: only pushes to main may do that. PR runs stop after
+    # Publishing mutates the apt-repo branch (including the build
+    # manifest recorded on it) and the Pages deployment: only main
+    # may do that, via a push or an operator's manual dispatch (the
+    # recovery path when a publish needs re-running). PR runs stop after
     # smoke. The explicit always() is needed because GitHub sometimes skips
     # publish even when all smoke jobs succeed (matrix + if: interaction).
     if: |
       always() &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
       needs.setup.result == 'success' &&
       needs.smoke.result == 'success'
     runs-on: ubuntu-latest
@@ -173,10 +196,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: debs-*
           path: debs
@@ -187,8 +210,87 @@ jobs:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
           TRACKS: ${{ join(fromJSON(needs.setup.outputs.suites).tracks, ',') }}
         run: python3 scripts/publish_repo.py
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: apt-repo-publish
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+
+  # Smoke tests the locally built artifacts; this job tests what users
+  # actually consume: the published Pages repository, its signatures and
+  # indices, installed from scratch. (An empty repo once shipped silently;
+  # this is the check that would have caught it.)
+  verify-published:
+    needs: [setup, publish]
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.publish.result == 'success'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu_version: ${{ fromJSON(needs.setup.outputs.suites).ubuntu }}
+        track: ${{ fromJSON(needs.setup.outputs.suites).tracks }}
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    container:
+      image: ubuntu:${{ matrix.ubuntu_version }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install podman-suite from the published repository
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq curl ca-certificates python3
+          SUITE="${{ matrix.track }}-$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
+          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")
+          # Pages deploys can lag the publish job by a few minutes. Wait
+          # until this suite's Packages index actually serves the version
+          # this run published; that is the freshness signal that matters.
+          PKGS="https://kush-gupt.github.io/podman-ubuntu/dists/$SUITE/main/binary-${{ matrix.arch }}/Packages"
+          for i in $(seq 1 30); do
+            if curl -fsSL "$PKGS" | grep -q "^Version: $EXPECTED-1~"; then
+              echo "published index serves podman $EXPECTED"
+              break
+            fi
+            if [ "$i" = 30 ]; then
+              echo "ERROR: published index never served podman $EXPECTED" >&2
+              exit 1
+            fi
+            sleep 20
+          done
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc -o /etc/apt/keyrings/podman-ubuntu.asc
+          chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
+          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$SUITE" > /etc/apt/sources.list.d/podman-ubuntu.sources
+          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
+          apt-get update -qq
+          apt-get install -y -qq podman-suite
+      - name: Run a container on the published stack
+        run: |
+          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")
+          podman --version | grep -F "version $EXPECTED"
+          test "$(podman --storage-driver=vfs info --format '{{.Host.Arch}}')" = "${{ matrix.arch }}"
+          podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from published podman ${{ matrix.track }} (${{ matrix.arch }})"
+
+  # One GitHub Release per published (track, podman version), with the
+  # component stack as the notes, so repo users get a change feed.
+  releases:
+    needs: [setup, publish]
+    if: |
+      always() &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Create releases for newly published versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/create_releases.py

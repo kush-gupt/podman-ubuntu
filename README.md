@@ -28,6 +28,18 @@ Components: main
 Signed-By: /etc/apt/keyrings/podman-ubuntu.asc
 EOF
 
+# Pin this repository above Ubuntu's archive. Ubuntu ships some of the
+# same packages (aardvark-dns, netavark), occasionally at a higher
+# Debian revision of the same upstream version; without the pin, apt
+# mixes Ubuntu's builds into the stack, and they install to different
+# paths than podman expects. Priority 1001 also lets the pin replace
+# an already-installed Ubuntu build of the same package.
+sudo tee /etc/apt/preferences.d/podman-ubuntu.pref > /dev/null << EOF
+Package: *
+Pin: origin kush-gupt.github.io
+Pin-Priority: 1001
+EOF
+
 sudo apt update
 sudo apt install -y podman-suite
 ```

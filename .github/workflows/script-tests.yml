@@ -1,0 +1,47 @@
+# Fast checks for the Python tooling and repo data. The full build matrix
+# takes ~90 jobs to notice a missing pin stack; these tests catch that
+# class of error in seconds, before the matrix starts.
+name: script-tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "packaging/components.json"
+      - "packaging/*/meta.json"
+      - "versions.json"
+      - "ubuntu-versions.json"
+      - ".github/workflows/script-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  script-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Unit and invariant tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: build_matrix validation (same entry point as orchestrate setup)
+        run: python3 scripts/build_matrix.py
+
+  # Network checks against the upstream repos: the pinned stacks must
+  # exist upstream and the pinned Go toolchain must satisfy podman's
+  # go.mod. PRs only; the push variant above covers the offline suite.
+  upstream-pins:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Verify pinned stacks against upstream
+        run: python3 scripts/verify_upstream_pins.py

@@ -23,6 +23,10 @@ mkdir -p "$SRC" "$ART"
 export DEBFULLNAME="Kush Gupta"
 export DEBEMAIL="kushalgupta@gmail.com"
 
+# Reproducible builds: build.yml pins this to the last commit touching the
+# component's packaging inputs. Fall back to now for manual runs.
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
+
 # Target Ubuntu suite (codename). The Debian revision carries a ~<suite>
 # suffix (e.g. 6.1.2-1~noble): the same upstream version built for different
 # Ubuntu releases produces byte-different debs, and reprepro's shared pool
@@ -163,7 +167,11 @@ EOF
   # changes" (mode bits, missing trailing newlines in vendored crates).
   # This mirrors what Debian packages with vendored sources do.
   origname="${COMPONENT}_${VERSION}.orig.tar.gz"
-  (cd "$SRC" && tar -czf "$origname" "$(basename "$workdir")")
+  # Deterministic tarball: sorted entries, normalized ownership, mtimes
+  # clamped to SOURCE_DATE_EPOCH, gzip without a header timestamp.
+  (cd "$SRC" && tar --sort=name --owner=0 --group=0 --numeric-owner \
+      --mtime="@${SOURCE_DATE_EPOCH}" -cf - "$(basename "$workdir")" \
+      | gzip -n > "$origname")
 
   # Overlay the debian/ directory (the file API does not preserve the
   # executable bit, so enforce it here).
