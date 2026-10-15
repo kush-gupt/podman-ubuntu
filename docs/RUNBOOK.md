@@ -23,13 +23,15 @@
    - **Vendoring failure**: upstream restructured modules; adjust
      `prepare-source.sh`.
 3. Push the fix to `main`; only the failed cells rebuild (skip logic reads
-   `manifest.json`).
+   the build manifest recorded on the `apt-repo` branch).
 
 ## The Ubuntu set changed
 
 The watcher opens the PR (new interim release, or one going EOL). Review and
-merge. New releases get builder images built automatically by `builder.yml`;
-EOL'd releases stop building but keep their published suites.
+merge. New releases get builder images built automatically by `builder.yml`.
+EOL'd releases stop building, and the next publish drops their suites from
+the apt repository (see the publishing model in
+[ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ## Lintian gate failed
 

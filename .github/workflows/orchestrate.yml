@@ -22,6 +22,8 @@ on:
       - "scripts/build_matrix.py"
       - "scripts/create_releases.py"
       - "scripts/install_debs.py"
+      - "scripts/install_published.sh"
+      - "scripts/smoke_test.sh"
       - "scripts/is_built.py"
       - "scripts/lib.py"
       - "scripts/prepare-source.sh"
@@ -40,6 +42,8 @@ on:
       - "scripts/build_matrix.py"
       - "scripts/create_releases.py"
       - "scripts/install_debs.py"
+      - "scripts/install_published.sh"
+      - "scripts/smoke_test.sh"
       - "scripts/is_built.py"
       - "scripts/lib.py"
       - "scripts/prepare-source.sh"
@@ -146,6 +150,22 @@ jobs:
         with:
           pattern: debs-*
           path: debs
+      - name: Upgrade path - install the currently published stack first
+        # Proves the published stack works, then the install step below
+        # upgrades it in place with this run's build; smoke_test.sh
+        # reports the version transition from /tmp/podman-before.txt.
+        # Exit 3 from install_published.sh means this cell has no
+        # published stack yet (new suite): reported, not silent.
+        run: |
+          set +e
+          bash scripts/install_published.sh "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
+          rc=$?
+          set -e
+          if [ $rc -eq 3 ]; then
+            echo "::warning::upgrade-path: no published stack for ${{ matrix.track }}-${{ matrix.ubuntu_version }} yet; upgrade section explicitly skipped for this cell"
+          elif [ $rc -ne 0 ]; then
+            exit $rc
+          fi
       - name: Install this cell's debs
         # Selects artifacts via their meta.json sidecars (written by
         # build.yml); installs with apt so deps resolve in one step.
@@ -168,23 +188,8 @@ jobs:
           # but Ubuntu's installs to a different path. Prefer ours.
           printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
           python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
-      - run: |
-          # Every binary in the stack reports a version. netavark and
-          # aardvark-dns live in libexec, not PATH.
-          podman --version
-          conmon --version
-          crun --version
-          /usr/libexec/podman/netavark --version
-          /usr/libexec/podman/aardvark-dns --version
-          command -v passt
-          # Actually run a container: exercises podman + crun + conmon +
-          # netavark end to end. vfs storage driver for reliability inside
-          # this nested container; --privileged on the job container
-          # allows the clone/mount syscalls podman needs. --cgroups=disabled
-          # because cgroup v2 controller delegation does not work inside
-          # GitHub's nested job containers (not a packaging issue).
-          podman --storage-driver=vfs info --format '{{.Host.Arch}} {{.Version.Version}}'
-          podman --storage-driver=vfs run --cgroups=disabled --rm docker.io/library/alpine:latest echo "hello from podman ${{ matrix.track }}"
+      - name: Deep smoke (versions, basic run, network + DNS, rootless, upgrade report)
+        run: bash scripts/smoke_test.sh
 
   publish:
     needs: [setup, smoke]

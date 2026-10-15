@@ -56,8 +56,55 @@ jobs:
       track: nightly
       extra: ${{ needs.setup.outputs.sha }}
 
-  publish:
+  # Nightly used to publish straight after the build, with no smoke
+  # and no post-publish check. Smoke now gates publish (same deep
+  # smoke as orchestrate), and verify-published checks the live repo
+  # afterwards, like orchestrate's.
+  smoke:
     needs: [setup, build]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    container:
+      image: ubuntu:${{ matrix.ubuntu_version }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: debs-*
+          path: debs
+      - name: Upgrade path - install the currently published stack first
+        run: |
+          set +e
+          bash scripts/install_published.sh nightly "${{ matrix.ubuntu_version }}"
+          rc=$?
+          set -e
+          if [ $rc -eq 3 ]; then
+            echo "::warning::upgrade-path: no published nightly for ${{ matrix.ubuntu_version }} yet; explicitly skipped"
+          elif [ $rc -ne 0 ]; then
+            exit $rc
+          fi
+      - name: Install the nightly debs over the published stack
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq python3 ca-certificates curl
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc -o /etc/apt/keyrings/podman-ubuntu.asc
+          chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
+          FLAT="$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
+          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: nightly-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\nTypes: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: stable-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$FLAT" "$FLAT" > /etc/apt/sources.list.d/podman-ubuntu.sources
+          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
+          python3 scripts/install_debs.py nightly "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
+      - name: Deep smoke (versions, basic run, network + DNS, rootless, upgrade report)
+        run: bash scripts/smoke_test.sh
+
+  publish:
+    needs: [setup, build, smoke]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -82,3 +129,42 @@ jobs:
           path: apt-repo-publish
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+
+  # Same idea as orchestrate's verify-published: test what users
+  # actually consume (the live Pages repo), not the local artifacts.
+  verify-published:
+    needs: [setup, publish]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    container:
+      image: ubuntu:${{ matrix.ubuntu_version }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Wait for the live index to serve this nightly, then install it
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq curl ca-certificates
+          FLAT="$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
+          ARCH="${{ matrix.arch }}"
+          PKGS="https://kush-gupt.github.io/podman-ubuntu/dists/nightly-$FLAT/main/binary-$ARCH/Packages"
+          for i in $(seq 1 30); do
+            if curl -fsSL "$PKGS" | grep -q "^Version: ${{ needs.setup.outputs.version }}-1~"; then
+              echo "live index serves nightly podman ${{ needs.setup.outputs.version }}"
+              break
+            fi
+            if [ "$i" = 30 ]; then
+              echo "ERROR: live index never served nightly ${{ needs.setup.outputs.version }}" >&2
+              exit 1
+            fi
+            sleep 20
+          done
+          bash scripts/install_published.sh nightly "${{ matrix.ubuntu_version }}"
+          dpkg-query -W -f='${Version}' podman | grep -F "${{ needs.setup.outputs.version }}-1~"
+      - name: Deep smoke on the published nightly stack
+        run: bash scripts/smoke_test.sh

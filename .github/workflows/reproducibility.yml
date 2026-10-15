@@ -1,0 +1,97 @@
+# Prove the reproducible-builds claim instead of assuming it.
+#
+# SOURCE_DATE_EPOCH pinning, deterministic orig tarballs and
+# -buildvcs=false have been in the pipeline since Oct 2026, but
+# nothing ever rebuilt the same inputs and compared bytes. This
+# workflow builds one fast, representative component (conmon, C, no
+# vendored toolchain deps) twice, on two independent runners, using
+# exactly the build.yml path (builder container, per-component
+# SOURCE_DATE_EPOCH, prepare-source.sh, dpkg-buildpackage), and a
+# third job compares the .deb sha256 hashes. It deliberately does
+# NOT use build.yml itself: build.yml's skip-if-published logic
+# would skip the second build (and usually the first).
+#
+# Scope, stated plainly: this verifies .deb byte reproducibility for
+# one component on one (Ubuntu, arch) cell. It does not prove every
+# component reproducible; Go/Rust components have more nondeterminism
+# surface and can be added as matrix cells if this stays green.
+name: reproducibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "packaging/conmon/**"
+      - "packaging/common/**"
+      - "scripts/prepare-source.sh"
+      - ".github/workflows/reproducibility.yml"
+  schedule:
+    - cron: "0 5 * * 1" # weekly, Monday 05:00 UTC (after nightly)
+
+permissions:
+  contents: read
+
+jobs:
+  build-once:
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/podman-ubuntu-builder:24.04-amd64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Trust the workspace for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Build conmon (stable stack pin, Ubuntu 24.04, amd64)
+        env:
+          DEB_BUILD_OPTIONS: nocheck noddebsym
+          GOFLAGS: -buildvcs=false
+        run: |
+          VERSION=$(python3 -c "
+          import json
+          stable = json.load(open('versions.json'))['stable']
+          print(json.load(open('packaging/components.json'))[stable]['conmon'])
+          ")
+          echo "conmon version: $VERSION"
+          # Same SOURCE_DATE_EPOCH rule as build.yml: last commit
+          # touching this component's packaging inputs.
+          sde=$(git log -1 --format=%ct -- packaging/conmon packaging/common scripts/prepare-source.sh)
+          export SOURCE_DATE_EPOCH="${sde:-$(git log -1 --format=%ct)}"
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
+          bash scripts/prepare-source.sh conmon "$VERSION" 24.04
+          cd "build/src/conmon-$VERSION"
+          dpkg-buildpackage -b -uc -us -d
+          cd "$GITHUB_WORKSPACE"
+          ls build/src/*.deb
+          sha256sum build/src/*.deb | sed "s|$GITHUB_WORKSPACE/||;s|build/src/||" > hashes.txt
+          cat hashes.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: repro-hashes-${{ matrix.run }}
+          path: hashes.txt
+
+  compare:
+    needs: build-once
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: repro-hashes-*
+          path: hashes
+      - name: Compare the two independent builds byte for byte
+        run: |
+          cat hashes/repro-hashes-1/hashes.txt
+          cat hashes/repro-hashes-2/hashes.txt
+          if diff -u hashes/repro-hashes-1/hashes.txt hashes/repro-hashes-2/hashes.txt; then
+            echo "REPRODUCIBLE: two independent conmon builds are byte-identical"
+          else
+            echo "ERROR: conmon .deb hashes differ between independent builds" >&2
+            exit 1
+          fi

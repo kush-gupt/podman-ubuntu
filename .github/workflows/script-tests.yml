@@ -33,6 +33,20 @@ jobs:
       - name: build_matrix validation (same entry point as orchestrate setup)
         run: python3 scripts/build_matrix.py
 
+  # Real-reprepro integration test for publish_repo's stale-entry
+  # replacement (the sims behind the Oct 2026 publish fixes, encoded).
+  # The unit job above also discovers this test but skips it when
+  # reprepro is absent; this job installs reprepro so CI always runs it.
+  reprepro-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install reprepro
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq reprepro
+      - name: reprepro stale-replacement integration test
+        run: python3 -m unittest tests.test_reprepro_integration -v
+
   # Network checks against the upstream repos: the pinned stacks must
   # exist upstream and the pinned Go toolchain must satisfy podman's
   # go.mod. PRs only; the push variant above covers the offline suite.

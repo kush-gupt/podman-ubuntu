@@ -57,6 +57,59 @@ def parse_listed(output):
     return entries
 
 
+def deb_field(deb, field):
+    return run("dpkg-deb", "-f", deb, field,
+               capture_output=True, text=True).stdout.strip()
+
+
+def listed_hits(base, suite, pkg, dver, darch):
+    """Recorded architectures under which (pkg, dver) is listed in
+    `suite`, restricted to entries a replacement of the (darch)
+    build must remove. Matching is per architecture: a filter
+    without an Architecture term removes EVERY architecture's
+    entry, so replacing the amd64 build and then the arm64 build
+    of the same version left only arm64 in the repo (the arm64
+    pass deleted the just-included amd64 entry). Note reprepro
+    lists an arch-all package once per suite architecture, so its
+    recorded tokens are the binary arches, never "all"."""
+    out = run("reprepro", "-b", base, "list", suite, pkg,
+              capture_output=True, text=True).stdout
+    return sorted({a for (v, a) in parse_listed(out)
+                   if v == dver
+                   and (a == darch or darch == "all" or a == "all")})
+
+
+def replace_stale(base, suite, pkg, dver, darch):
+    """Remove the stale (pkg, dver, darch) entry from `suite` so a
+    fresh build of the same version can be included. Returns True
+    when an entry was removed. Extracted from main() unchanged in
+    behavior so the reprepro integration test can drive it.
+
+    removefilter targets one exact version; plain `remove suite
+    pkg=version` silently matches nothing (it parses the whole
+    string as a package name). The Architecture term is load-bearing
+    and must be the DEB's architecture: without it the filter
+    removes every architecture's entry, and for arch-all packages
+    the recorded tokens are the suite's binary arches, so filtering
+    on a recorded token instead of "all" matches nothing."""
+    if not listed_hits(base, suite, pkg, dver, darch):
+        return False
+    run("reprepro", "-b", base, "removefilter", suite,
+        f"Package (== {pkg}), Version (== {dver}), "
+        f"Architecture (== {darch})",
+        capture_output=True, text=True)
+    # removefilter returns success even when it matched nothing;
+    # verify the entry is actually gone, or the includedeb after
+    # this fails with a checksum error that hides the real cause.
+    left = listed_hits(base, suite, pkg, dver, darch)
+    if left:
+        print(f"ERROR: stale {pkg} {dver} still listed in {suite} "
+              f"under {left} after removefilter (arch {darch})",
+              flush=True)
+        sys.exit(1)
+    return True
+
+
 def main():
     try:
         subkey_b64 = os.environ["APT_SIGNING_SUBKEY"]
@@ -184,26 +237,6 @@ def main():
         g = groups.setdefault(key, {"dir": d, "tracks": set()})
         g["tracks"].add(m["track"])
 
-    def deb_field(deb, field):
-        return run("dpkg-deb", "-f", deb, field,
-                   capture_output=True, text=True).stdout.strip()
-
-    def listed_hits(suite, pkg, dver, darch):
-        """Recorded architectures under which (pkg, dver) is listed in
-        `suite`, restricted to entries a replacement of the (darch)
-        build must remove. Matching is per architecture: a filter
-        without an Architecture term removes EVERY architecture's
-        entry, so replacing the amd64 build and then the arm64 build
-        of the same version left only arm64 in the repo (the arm64
-        pass deleted the just-included amd64 entry). Note reprepro
-        lists an arch-all package once per suite architecture, so its
-        recorded tokens are the binary arches, never "all"."""
-        out = run("reprepro", "-b", aptd, "list", suite, pkg,
-                  capture_output=True, text=True).stdout
-        return sorted({a for (v, a) in parse_listed(out)
-                       if v == dver
-                       and (a == darch or darch == "all" or a == "all")})
-
     for (comp, ver, ubuntu, arch) in sorted(groups):
         g = groups[(comp, ver, ubuntu, arch)]
         debs = sorted(glob.glob(os.path.join(g["dir"], "*.deb")))
@@ -222,31 +255,8 @@ def main():
             darch = deb_field(deb, "Architecture")
             removed = False
             for suite in run_suites:
-                if listed_hits(suite, pkg, dver, darch):
-                    # removefilter targets one exact version; plain
-                    # `remove suite pkg=version` silently matches
-                    # nothing (it parses the whole string as a package
-                    # name). The Architecture term is load-bearing and
-                    # must be the DEB's architecture: without it the
-                    # filter removes every architecture's entry, and
-                    # for arch-all packages the recorded tokens are
-                    # the suite's binary arches, so filtering on a
-                    # recorded token instead of "all" matches nothing.
-                    run("reprepro", "-b", aptd, "removefilter", suite,
-                        f"Package (== {pkg}), Version (== {dver}), "
-                        f"Architecture (== {darch})",
-                        capture_output=True, text=True)
+                if replace_stale(aptd, suite, pkg, dver, darch):
                     removed = True
-                    # removefilter returns success even when it
-                    # matched nothing; verify the entry is actually
-                    # gone, or the includedeb below fails with a
-                    # checksum error that hides the real cause.
-                    left = listed_hits(suite, pkg, dver, darch)
-                    if left:
-                        print(f"ERROR: stale {pkg} {dver} still listed "
-                              f"in {suite} under {left} after "
-                              f"removefilter (arch {darch})", flush=True)
-                        sys.exit(1)
             if removed:
                 run("reprepro", "-b", aptd, "deleteunreferenced",
                     capture_output=True, text=True)

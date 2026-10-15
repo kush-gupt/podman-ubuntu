@@ -64,11 +64,20 @@ Three moving parts, each with exactly one source of truth:
    (crun, conmon, netavark, aardvark-dns, passt, containers-common in
    parallel, then podman) inside pre-baked toolchain Containerfiles, as real
    source packages via `sbuild --chroot-mode=unshare`. Lintian gates every
-   build; a smoke test installs the debs in a fresh container.
-3. **Publish** (`scripts/publish-repo.sh`): assembles the apt repository with
-   `reprepro` on a dedicated `apt-repo` branch, prunes to the latest three
-   versions per suite, signs with a passphrase-less CI subkey, and deploys to
-   GitHub Pages.
+   build; a deep smoke test (`scripts/smoke_test.sh`) installs the debs in
+   a fresh container, upgrades them over the currently published stack,
+   and exercises networking, container DNS, and a rootless run.
+3. **Publish** (`scripts/publish_repo.py`): assembles the apt repository
+   with `reprepro` on a dedicated `apt-repo` branch, prunes to the latest
+   three versions per suite, drops suites whose Ubuntu release has gone
+   EOL, records the build manifest on the `apt-repo` branch (not main),
+   signs with a passphrase-less CI subkey, and deploys to GitHub Pages.
+
+Verification does not end at publish: `verify-published` installs the
+just-published stack from the live repository, a daily `repo-health`
+workflow re-checks every live suite's index completeness and installs
+from it, and a weekly `reproducibility` workflow rebuilds one
+component on two independent runners and compares the .deb hashes.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design,
 [docs/RUNBOOK.md](docs/RUNBOOK.md) for operating it, and

@@ -1,0 +1,65 @@
+# Daily check of the LIVE published apt repository, independent of
+# any publish run. verify-published (orchestrate) only exercises the
+# repo right after a publish; this catches a Pages / reprepro /
+# signing regression that lands between releases, the failure mode
+# that once left every amd64 index holding 2 of 8 packages unnoticed.
+#
+# Failures surface through ci-failure-alert (this workflow is in its
+# workflow_run list), which reruns once and then opens a ci-failure
+# issue.
+name: repo-health
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # daily, 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ubuntu: ${{ steps.cfg.outputs.ubuntu }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - id: cfg
+        run: |
+          echo "ubuntu=$(python3 -c "import json; print(json.dumps(json.load(open('ubuntu-versions.json'))['releases']))")" >> "$GITHUB_OUTPUT"
+
+  # Index completeness for every suite x arch, on the host: cheap,
+  # and it is the direct regression test for the gutted-index bug.
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: python3 scripts/check_live_repo.py
+
+  # Full install + deep smoke from the live repo in clean containers,
+  # using the documented README recipe (install_published.sh).
+  install:
+    needs: setup
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu_version: ${{ fromJSON(needs.setup.outputs.ubuntu) }}
+        track: [stable, v5, nightly]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    container:
+      image: ubuntu:${{ matrix.ubuntu_version }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install from the live repository (README recipe)
+        run: bash scripts/install_published.sh "${{ matrix.track }}" "${{ matrix.ubuntu_version }}"
+      - name: Assert the installed podman version (stable/v5)
+        if: matrix.track != 'nightly'
+        run: |
+          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")
+          podman --version | grep -F "version $EXPECTED"
+      - name: Deep smoke on the published stack
+        run: bash scripts/smoke_test.sh
