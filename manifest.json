@@ -29,10 +29,10 @@
     },
     "containers-common": {
       "0.67.2": {
-        "packaging_sha": "b8d8f6dd376eec0e7b3b0bb84f30cdc2f9ab"
+        "packaging_sha": "b459e821c76fec0e7b3b0bb84f30cdc2f9ab"
       },
       "0.69.2": {
-        "packaging_sha": "b8d8f6dd376eec0e7b3b0bb84f30cdc2f9ab"
+        "packaging_sha": "b459e821c76fec0e7b3b0bb84f30cdc2f9ab"
       }
     },
     "passt": {

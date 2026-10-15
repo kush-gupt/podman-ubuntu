@@ -37,16 +37,16 @@ Version: 0.67.2-1~noble
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
-Breaks: golang-github-containers-common
-Replaces: golang-github-containers-common
-Provides: golang-github-containers-common
+Breaks: golang-github-containers-common, golang-github-containers-image
+Replaces: golang-github-containers-common, golang-github-containers-image
+Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.67.2-1~noble_all.deb
-Size: 16670
-SHA256: 8ca52d7674d8efef647b385b091e7b4281f2e4d54566ccfad24b2e4a3b5e5158
-SHA1: b3ac6292eccddd1b7b444e1024619f3153e52bbc
-MD5sum: b722f5401a1c9dd62e2aab439cdd48e0
+Size: 16676
+SHA256: 2b8b31cad4d3a2bd44927e10ed706ec7016b98bdde85adf72d6af5ebb87fc673
+SHA1: e03fb3e1f78b1429e6beb90c2de3606ab9a1dadf
+MD5sum: fd49d77cff04db6cab324dc3061d1954
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.

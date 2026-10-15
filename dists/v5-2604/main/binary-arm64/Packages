@@ -37,16 +37,16 @@ Version: 0.67.2-1~resolute
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
-Breaks: golang-github-containers-common
-Replaces: golang-github-containers-common
-Provides: golang-github-containers-common
+Breaks: golang-github-containers-common, golang-github-containers-image
+Replaces: golang-github-containers-common, golang-github-containers-image
+Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.67.2-1~resolute_all.deb
-Size: 16680
-SHA256: 4a345a9d35a8c881ef8ceeda14d3bc8f1a90146e5780a75dc5b79338f3dcc0e1
-SHA1: 36dda2b90ca0d37375653fe9fe3964a3f490c479
-MD5sum: af48659c6532b9dda2c7fcc142c148ee
+Size: 16690
+SHA256: 13047cb0cba30ef92a1b5a151a3efb488d05514d764be062fdd6fca712e893b8
+SHA1: 0bde8a9656b7b30cc864e1efd7a9d3c60e403ca9
+MD5sum: b76454b3ed51d4007846aff1b5d58db7
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
