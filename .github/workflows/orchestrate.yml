@@ -92,7 +92,18 @@ jobs:
 
   level1:
     needs: [setup, level0]
-    if: needs.setup.outputs.level1 != '[]'
+    # always() + explicit result checks, like publish below: without
+    # them GitHub skips this job whenever level0 is skipped (empty
+    # level0 matrix), even when level1 has cells — an incremental
+    # podman-only bump then "succeeds" while building and publishing
+    # nothing. level0 failing must still block level1 (its artifacts
+    # are level1's inputs), hence success-or-skipped, not any result.
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      needs.setup.outputs.level1 != '[]' &&
+      (needs.level0.result == 'success' ||
+       needs.level0.result == 'skipped')
     strategy:
       fail-fast: false
       max-parallel: 20
