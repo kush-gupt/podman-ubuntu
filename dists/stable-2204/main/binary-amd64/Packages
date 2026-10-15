@@ -37,13 +37,16 @@ Version: 0.69.2-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
+Breaks: golang-github-containers-common
+Replaces: golang-github-containers-common
+Provides: golang-github-containers-common
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.69.2-1~jammy_all.deb
-Size: 16724
-SHA256: bdd43dcd71bde16c739bb49bbe8c2cec52e2e764062de9d64088bf5700e3ca97
-SHA1: bf677292426e22026cc1058f87a3acb18eac7dce
-MD5sum: a3ea57247674b4ca37162c1d55c7cfd0
+Size: 16738
+SHA256: 24656b8aa6ec4d2e8ed152b6a151a4015a50d1254c6e4b1b4dff257ab50bce9a
+SHA1: c9f27ccd798a1d686d69a7591c0cb5741e0b37c5
+MD5sum: 04b3ef34bd81b23b55a70d32c94cb090
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -110,10 +113,10 @@ Recommends: podman-docker, containers-common
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman/podman_6.1.4-1~jammy_amd64.deb
-Size: 24984318
-SHA256: 643c3ce50b907fa93ec3f4d066083d8f82b7015b4583d80057e015fe10025c1e
-SHA1: 2d8041f294925ba9ba600221e494036a549a9aaf
-MD5sum: c3bba5fb6361fd0ac187b9f1036e1253
+Size: 24982420
+SHA256: 6f5b2c9cbc2ca724d38910b5539958a89ea02a3bbf2453918ed2cadb57dc98c6
+SHA1: 0831dd49af98ed00e2f6d469aca7d177e0402ff2
+MD5sum: 3829c14654b4e46d6061d9fc1fd15763
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
