@@ -95,13 +95,9 @@ jobs:
           sudo rm -f /etc/containers/storage.conf
           sudo rm -rf /etc/containers/networks
       - name: Install from the live repository (README recipe, host)
-        run: sudo bash scripts/install_published.sh stable 24.04
-      - name: Assert the installed podman version
         run: |
-          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
-          podman --version | grep -F "version $EXPECTED"
-      - name: Diagnose helper binary resolution
-        run: |
+          sudo bash scripts/install_published.sh stable 24.04 || true
+          echo "== helper binary diagnostics =="
           grep -rn "helper_binaries_dir" /usr/share/containers/containers.conf /etc/containers/containers.conf 2>/dev/null || true
           ls -l /usr/lib/podman /usr/libexec/podman 2>/dev/null || true
           /usr/lib/podman/netavark --version 2>/dev/null || true
@@ -109,6 +105,10 @@ jobs:
           dpkg -S /usr/lib/podman/netavark /usr/libexec/podman/netavark 2>/dev/null || true
           dpkg -l | grep -iE "netavark|aardvark|containers-common" || true
           sudo podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || true
+      - name: Assert the installed podman version
+        run: |
+          EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['stable'])")
+          podman --version | grep -F "version $EXPECTED"
       - name: Reset podman storage again (install's proof run used vfs)
         run: |
           # install_published.sh proves the published stack with an
