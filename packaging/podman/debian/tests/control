@@ -1,8 +1,3 @@
-Tests: smoke
-Depends: @
-Restrictions: needs-root
-Test-Command: podman --version && podman info --format '{{.Version.Version}}'
-
-Tests: network-run
+Tests: smoke, network-run
 Depends: @
 Restrictions: needs-root, allow-stderr

@@ -336,6 +336,12 @@ class TestComponentWatch(unittest.TestCase):
             check_releases.latest_component_version(rels, "common/v"),
             "0.70.0")
 
+    def test_component_bump_stays_within_major_line(self):
+        self.assertTrue(check_releases.component_bump_ok("1.21", "1.30.1"))
+        self.assertTrue(check_releases.component_bump_ok("2.1.13", "2.2.1"))
+        self.assertTrue(check_releases.component_bump_ok("0.67.2", "0.69.2"))
+        self.assertFalse(check_releases.component_bump_ok("1.16.0", "2.1.0"))
+
     def test_upstreams_cover_the_prepare_source_components(self):
         # Every GitHub-hosted component prepare-source.sh fetches must
         # be watched (passt is git-based and handled separately).

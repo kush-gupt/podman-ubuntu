@@ -111,6 +111,19 @@ def latest_component_version(releases, prefix):
     return best
 
 
+def component_bump_ok(pin, latest):
+    """A component watch bump must stay within the pin's major line.
+
+    Stacks pin the versions from their podman release's notes, and
+    tracks deliberately sit on different majors (the v5 stack pins
+    netavark/aardvark-dns 1.16 while stable pins 2.1). Proposing a
+    cross-major rewrite of a maintenance stack is not a watch bump,
+    it is a track decision for a human to make unprompted. Within a
+    major line, the bump is proposed and the PR's checklist + full
+    build/smoke matrix + human review are the gate."""
+    return pin.split(".")[0] == latest.split(".")[0]
+
+
 def latest_components():
     """{component: latest upstream version} for the GitHub-hosted
     components. Network: one releases call per upstream repo."""
@@ -200,6 +213,12 @@ def main():
             stack = components.get(key, {})
             pin = stack.get(comp)
             if pin and _ver_key(latest) > _ver_key(pin):
+                if not component_bump_ok(pin, latest):
+                    print(f"component watch: {comp} {pin} -> {latest} "
+                          f"crosses a major line in stack {key}; "
+                          "not proposing (track decision, see "
+                          "component_bump_ok)")
+                    continue
                 changes.append(f"{comp} {pin} -> {latest} (stack {key})")
                 component_changes.append((comp, pin, latest, key))
                 stack[comp] = latest

@@ -1,0 +1,7 @@
+#!/bin/sh
+# DEP-8 smoke: the installed podman reports its version.
+# (Was a Test-Command inline test until 2026-10; a control paragraph
+# cannot carry both Tests: and Test-Command:, so it is a script now.)
+set -eu
+podman --version
+podman info --format '{{.Version.Version}}'
