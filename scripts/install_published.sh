@@ -66,7 +66,9 @@ chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
   printf 'Types: deb\nURIs: %s\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' \
     "$BASE" "$SUITE"
   if [ "$TRACK" = "nightly" ]; then
-    printf 'Types: deb\nURIs: %s\nSuites: stable-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' \
+    # The blank line matters: deb822 stanzas are paragraphs. Without
+    # it the two stanzas parse as one and the nightly suite is lost.
+    printf '\nTypes: deb\nURIs: %s\nSuites: stable-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' \
       "$BASE" "$FLAT"
   fi
 } > /etc/apt/sources.list.d/podman-ubuntu.sources

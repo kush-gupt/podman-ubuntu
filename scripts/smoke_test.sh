@@ -66,6 +66,13 @@ if [ "$(id -u)" != "0" ]; then
     rootless_ok=1
   fi
 else
+  # Rootless podman needs newuidmap (uidmap package); the minimal
+  # container + our stack do not install it. Add it (and slirp4netns
+  # as the fallback rootless network helper) before concluding the
+  # environment cannot do rootless.
+  if ! command -v newuidmap >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+    apt-get install -y -qq uidmap slirp4netns >/dev/null 2>&1 || true
+  fi
   if ! id smokeuser >/dev/null 2>&1; then
     useradd -m -s /bin/bash smokeuser || true
   fi

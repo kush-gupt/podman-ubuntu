@@ -59,6 +59,9 @@ jobs:
       - name: Assert the installed podman version (stable/v5)
         if: matrix.track != 'nightly'
         run: |
+          # The minimal 26.04 container has no python3 (older releases
+          # got it transitively); install it for this step.
+          apt-get install -y -qq python3
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")
           podman --version | grep -F "version $EXPECTED"
       - name: Deep smoke on the published stack

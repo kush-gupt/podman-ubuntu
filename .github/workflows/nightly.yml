@@ -97,7 +97,7 @@ jobs:
           curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc -o /etc/apt/keyrings/podman-ubuntu.asc
           chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
           FLAT="$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
-          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: nightly-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\nTypes: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: stable-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$FLAT" "$FLAT" > /etc/apt/sources.list.d/podman-ubuntu.sources
+          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: nightly-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n\nTypes: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: stable-%s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$FLAT" "$FLAT" > /etc/apt/sources.list.d/podman-ubuntu.sources
           printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
           python3 scripts/install_debs.py nightly "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
       - name: Deep smoke (versions, basic run, network + DNS, rootless, upgrade report)
