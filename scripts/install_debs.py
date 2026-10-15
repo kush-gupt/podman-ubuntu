@@ -4,9 +4,7 @@
 Selects artifacts via their meta.json sidecars (written by build.yml) rather
 than parsing directory names, then installs with apt so dependencies resolve
 in one step. Fails loudly when nothing matches: a silent empty install would
-smoke-test nothing. Stdlib only.
-
-Usage: install_debs.py <track> <ubuntu_version> [arch]
+smoke-test nothing. Stdlib only.Usage: install_debs.py <track> <ubuntu_version> [arch]
 """
 import glob
 import os
@@ -17,6 +15,36 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 
+def deb_field(deb, field):
+    return subprocess.run(["dpkg-deb", "-f", deb, field],
+                          capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def select_debs(track, uver, arch, debs_dir="debs"):
+    """Locally built .debs for one (track, ubuntu, arch) smoke cell.
+
+    Artifacts built for this arch match directly. An artifact built for
+    another arch also matches when every .deb in it is
+    Architecture: all: build_matrix.py builds arch-independent
+    components once, on amd64, but the resulting .deb installs on every
+    arch. Without that second rule a change touching only an arch-all
+    component (e.g. containers-common) leaves the other arches' smoke
+    cells with no artifacts at all, and the run dies before publish.
+    """
+    debs = []
+    for d, m in lib.iter_artifacts(debs_dir):
+        if (m["track"], m["ubuntu"]) != (track, uver):
+            continue
+        found = sorted(glob.glob(os.path.join(d, "*.deb")))
+        if m["arch"] == arch:
+            debs += found
+        elif found and all(deb_field(f, "Architecture") == "all"
+                            for f in found):
+            debs += found
+    return debs
+
+
 def main():
     track, uver = sys.argv[1], sys.argv[2]
     if len(sys.argv) > 3:
@@ -25,10 +53,7 @@ def main():
         arch = subprocess.run(["dpkg", "--print-architecture"],
                               capture_output=True, text=True,
                               check=True).stdout.strip()
-    debs = []
-    for d, m in lib.iter_artifacts("debs"):
-        if (m["track"], m["ubuntu"], m["arch"]) == (track, uver, arch):
-            debs += glob.glob(os.path.join(d, "*.deb"))
+    debs = select_debs(track, uver, arch)
     if not debs:
         sys.exit(f"ERROR: no artifacts for track={track} ubuntu={uver} "
                  f"arch={arch}; refusing to smoke-test an empty install")
@@ -38,11 +63,6 @@ def main():
     # without them, which breaks image pulls.
     subprocess.run(["apt-get", "install", "-y", "-qq", "ca-certificates"],
                    check=True)
-
-    def deb_field(deb, field):
-        return subprocess.run(["dpkg-deb", "-f", deb, field],
-                              capture_output=True, text=True,
-                              check=True).stdout.strip()
 
     def installed_version(pkg):
         r = subprocess.run(["dpkg-query", "-W", "-f=${Version}", pkg],

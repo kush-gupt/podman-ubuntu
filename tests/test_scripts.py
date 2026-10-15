@@ -11,8 +11,10 @@ matrix's setup job failed.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -381,3 +383,53 @@ class TestKeyExpiry(unittest.TestCase):
         self.assertEqual(check_key_expiry.assess(31), "warn")
         self.assertEqual(check_key_expiry.assess(30), "escalate")
         self.assertEqual(check_key_expiry.assess(0), "escalate")
+
+
+@unittest.skipUnless(shutil.which("dpkg-deb"), "dpkg-deb not installed")
+class TestInstallDebsSelection(unittest.TestCase):
+    """install_debs.select_debs: an arch-all .deb built on amd64 must be
+    selectable by an arm64 smoke cell (build_matrix builds arch-all
+    components once, on amd64), while an arch-specific .deb built for a
+    different arch must not be."""
+
+    import install_debs as idb
+
+    def _artifact(self, root, name, meta_arch, deb_arch, pkg):
+        d = os.path.join(root, name)
+        os.makedirs(d)
+        with open(os.path.join(d, "meta.json"), "w") as f:
+            json.dump({"component": pkg, "version": "1.0",
+                       "track": "stable", "ubuntu": "24.04",
+                       "arch": meta_arch}, f)
+        src = os.path.join(root, f"src-{name}")
+        os.makedirs(os.path.join(src, "DEBIAN"))
+        with open(os.path.join(src, "DEBIAN", "control"), "w") as f:
+            f.write(f"Package: {pkg}\nVersion: 1.0-1\n"
+                    f"Architecture: {deb_arch}\n"
+                    f"Maintainer: Test <t@example>\n"
+                    f"Description: fake package\n")
+        deb = os.path.join(d, f"{pkg}_1.0-1_{deb_arch}.deb")
+        for dirpath, _dirs, _files in os.walk(src):
+            os.chmod(dirpath, 0o755)
+        subprocess.run(["dpkg-deb", "--build", "--root-owner-group",
+                        src, deb], check=True, capture_output=True)
+        return deb
+
+    def test_arch_all_foreign_build_matches_specific_does_not(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = os.path.join(td, "debs")
+            os.makedirs(root)
+            all_deb = self._artifact(root, "debs-cc-1-stable-u24.04-amd64",
+                                     "amd64", "all", "containers-common")
+            self._artifact(root, "debs-crun-1-stable-u24.04-amd64",
+                           "amd64", "amd64", "crun")
+            arm_deb = self._artifact(root, "debs-crun-1-stable-u24.04-arm64",
+                                     "arm64", "arm64", "crun")
+            got = self.idb.select_debs("stable", "24.04", "arm64", root)
+            self.assertIn(all_deb, got)
+            self.assertIn(arm_deb, got)
+            self.assertEqual(len(got), 2)
+            got_amd = self.idb.select_debs("stable", "24.04", "amd64", root)
+            self.assertEqual(len(got_amd), 2)
+            self.assertEqual(self.idb.select_debs("v5", "24.04", "arm64",
+                                                 root), [])
