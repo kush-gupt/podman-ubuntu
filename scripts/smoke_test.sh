@@ -127,8 +127,14 @@ else
     mkdir -p /tmp/smoke-xdg
     chown smokeuser:smokeuser /tmp/smoke-xdg || true
     run_rootless() {
+      # XDG_CONFIG_HOME must be pinned too: the runner session's
+      # environment carries the runner user's XDG_CONFIG_HOME, and
+      # podman-as-smokeuser then tries to read
+      # /home/runner/.config/containers/storage.conf, which it
+      # cannot traverse (permission denied).
       runuser -u smokeuser -- env HOME=/home/smokeuser \
         XDG_RUNTIME_DIR=/tmp/smoke-xdg \
+        XDG_CONFIG_HOME=/home/smokeuser/.config \
         $PODMAN run $RUNFLAGS "$@" --rm "$IMAGE" \
         echo "smoke: rootless ok"
     }
@@ -207,7 +213,9 @@ EOS
     mkdir -p /tmp/smoke-xdg
     chown smokeuser:smokeuser /tmp/smoke-xdg || true
     if runuser -u smokeuser -- env HOME=/home/smokeuser \
-        XDG_RUNTIME_DIR=/tmp/smoke-xdg SMOKE_IMAGE="$IMAGE" \
+        XDG_RUNTIME_DIR=/tmp/smoke-xdg \
+        XDG_CONFIG_HOME=/home/smokeuser/.config \
+        SMOKE_IMAGE="$IMAGE" \
         bash /tmp/smoke-rootless-net.sh > /tmp/smoke-rootless-net.log 2>&1; then
       cat /tmp/smoke-rootless-net.log
       echo "SMOKE-HOST: rootless-networking PASS"
