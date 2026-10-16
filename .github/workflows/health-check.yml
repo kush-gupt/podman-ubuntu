@@ -112,7 +112,13 @@ jobs:
           # pasta (rootless networking) needs the tun device; the
           # runner's smokeuser is not in the tun group.
           sudo chmod 0666 /dev/net/tun || true
-          sudo env SMOKE_HOST=1 bash scripts/smoke_test.sh
+          # Run in PID 1's mount namespace, not the runner agent's:
+          # the agent's own sandbox masks /proc/sys entries, and
+          # pasta fails there ("Unable to open
+          # /proc/sys/net/ipv4/ip_local_port_range: Permission
+          # denied") even though the host itself is fine. The smoke
+          # targets the environment users get, which is init's.
+          sudo nsenter -t 1 -m -- env SMOKE_HOST=1 bash scripts/smoke_test.sh
 
   # Full install + deep smoke from the live repo in clean containers,
   # using the documented README recipe (install_published.sh).
