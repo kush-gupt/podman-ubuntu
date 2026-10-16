@@ -62,8 +62,16 @@ if [ "${SMOKE_HOST:-0}" = "1" ]; then
   DRIVER="$($PODMAN info --format '{{.Store.GraphDriverName}}')"
   [ "$DRIVER" = "overlay" ] || host_fail "overlay" "graph driver is $DRIVER, want overlay"
   echo "SMOKE-HOST: overlay PASS"
-  CGROUPVER="$($PODMAN info --format '{{.Host.CgroupVersion}}')"
-  [ "$CGROUPVER" = "v2" ] || host_fail "cgroups" "cgroup version is $CGROUPVER, want v2"
+  # Podman 6 dropped the CgroupVersion field from `podman info`
+  # (template access errors out); read the JSON key when present
+  # and otherwise ask the kernel which hierarchy is mounted.
+  CGROUPVER="$($PODMAN info --format json 2>/dev/null \
+    | grep -o '"cgroupVersion"[^,}]*' | head -1 | grep -o 'v[12]' || true)"
+  if [ -z "$CGROUPVER" ] && \
+     [ "$(stat -fc %T /sys/fs/cgroup 2>/dev/null)" = "cgroup2fs" ]; then
+    CGROUPVER="v2"
+  fi
+  [ "$CGROUPVER" = "v2" ] || host_fail "cgroups" "cgroup version is ${CGROUPVER:-unknown}, want v2"
 fi
 
 echo "== basic container run =="
