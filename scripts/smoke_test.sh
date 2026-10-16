@@ -100,6 +100,53 @@ trap - EXIT
 echo "== rootless run =="
 rootless_ok=0
 rootless_mode=""
+
+# Rootless sections run as a dedicated non-root user when the smoke
+# itself runs as root. SMOKE_ROOTLESS_USER selects the user (default
+# smokeuser, created on demand). Host jobs pass the runner user:
+# GitHub's images preconfigure rootless podman for that user (real
+# home, a real /run/user/<uid> session, subuid ranges), while a
+# synthetic user has no session and pasta cannot set up its
+# networking from the fake runtime dir.
+ROOTLESS_USER="${SMOKE_ROOTLESS_USER:-smokeuser}"
+ROOTLESS_HOME=""
+ROOTLESS_XDG=""
+setup_rootless_user() {
+  # Rootless podman needs newuidmap (uidmap package); the minimal
+  # container + our stack do not install it. Add it (and slirp4netns
+  # as the fallback rootless network helper) before concluding the
+  # environment cannot do rootless.
+  if ! command -v newuidmap >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+    apt-get install -y -qq uidmap slirp4netns >/dev/null 2>&1 || true
+  fi
+  if ! id "$ROOTLESS_USER" >/dev/null 2>&1; then
+    useradd -m -s /bin/bash "$ROOTLESS_USER" || true
+  fi
+  id "$ROOTLESS_USER" >/dev/null 2>&1 || return 1
+  grep -q "^${ROOTLESS_USER}:" /etc/subuid 2>/dev/null || \
+    echo "${ROOTLESS_USER}:100000:65536" >> /etc/subuid || true
+  grep -q "^${ROOTLESS_USER}:" /etc/subgid 2>/dev/null || \
+    echo "${ROOTLESS_USER}:100000:65536" >> /etc/subgid || true
+  ROOTLESS_HOME="$(getent passwd "$ROOTLESS_USER" | cut -d: -f6)"
+  [ -n "$ROOTLESS_HOME" ] || ROOTLESS_HOME="/home/$ROOTLESS_USER"
+  # Prefer the user's real runtime dir (a live user session); fall
+  # back to a private dir under /tmp for synthetic users.
+  if [ -d "/run/user/$(id -u "$ROOTLESS_USER")" ]; then
+    ROOTLESS_XDG="/run/user/$(id -u "$ROOTLESS_USER")"
+  else
+    ROOTLESS_XDG="/tmp/smoke-xdg"
+    mkdir -p "$ROOTLESS_XDG"
+    chown "$ROOTLESS_USER:$ROOTLESS_USER" "$ROOTLESS_XDG" || true
+  fi
+}
+run_as_rootless() {
+  # HOME/XDG_CONFIG_HOME are pinned: the caller's environment can
+  # carry another user's values, and podman-as-$ROOTLESS_USER then
+  # reads config it cannot traverse (permission denied).
+  runuser -u "$ROOTLESS_USER" -- env HOME="$ROOTLESS_HOME" \
+    XDG_RUNTIME_DIR="$ROOTLESS_XDG" \
+    XDG_CONFIG_HOME="$ROOTLESS_HOME/.config" "$@"
+}
 if [ "$(id -u)" != "0" ]; then
   if $PODMAN run $RUNFLAGS --rm "$IMAGE" echo "smoke: rootless ok"; then
     rootless_ok=1
@@ -109,35 +156,12 @@ if [ "$(id -u)" != "0" ]; then
     rootless_mode="no-network"
   fi
 else
-  # Rootless podman needs newuidmap (uidmap package); the minimal
-  # container + our stack do not install it. Add it (and slirp4netns
-  # as the fallback rootless network helper) before concluding the
-  # environment cannot do rootless.
-  if ! command -v newuidmap >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
-    apt-get install -y -qq uidmap slirp4netns >/dev/null 2>&1 || true
-  fi
-  if ! id smokeuser >/dev/null 2>&1; then
-    useradd -m -s /bin/bash smokeuser || true
-  fi
-  if id smokeuser >/dev/null 2>&1; then
-    grep -q '^smokeuser:' /etc/subuid 2>/dev/null || \
-      echo 'smokeuser:100000:65536' >> /etc/subuid || true
-    grep -q '^smokeuser:' /etc/subgid 2>/dev/null || \
-      echo 'smokeuser:100000:65536' >> /etc/subgid || true
-    mkdir -p /tmp/smoke-xdg
-    chown smokeuser:smokeuser /tmp/smoke-xdg || true
+  if setup_rootless_user; then
     run_rootless() {
-      # XDG_CONFIG_HOME must be pinned too: the runner session's
-      # environment carries the runner user's XDG_CONFIG_HOME, and
-      # podman-as-smokeuser then tries to read
-      # /home/runner/.config/containers/storage.conf, which it
-      # cannot traverse (permission denied). And podman inherits the
-      # caller's cwd (the checkout under /home/runner, also not
-      # traversable by smokeuser), so start from smokeuser's home.
-      runuser -u smokeuser -- env HOME=/home/smokeuser \
-        XDG_RUNTIME_DIR=/tmp/smoke-xdg \
-        XDG_CONFIG_HOME=/home/smokeuser/.config \
-        bash -c 'cd "$HOME" || exit 1; exec "$@"' _ \
+      # podman inherits the caller's cwd; when that is a checkout
+      # the rootless user cannot traverse, the run dies with
+      # "cannot chdir", so start from the user's home.
+      run_as_rootless bash -c 'cd "$HOME" || exit 1; exec "$@"' _ \
         $PODMAN run $RUNFLAGS "$@" --rm "$IMAGE" \
         echo "smoke: rootless ok"
     }
@@ -189,7 +213,8 @@ if [ "${SMOKE_HOST:-0}" = "1" ]; then
 #!/usr/bin/env bash
 set -euo pipefail
 # podman inherits the caller's cwd; when invoked via runuser from a
-# root-owned checkout, that cwd is not traversable by smokeuser.
+# root-owned checkout, that cwd is not traversable by the rootless
+# user, so start from its home.
 cd "$HOME" || cd /tmp
 IMAGE="${SMOKE_IMAGE:-docker.io/library/alpine:latest}"
 NET="smoke-rnet-$$"
@@ -206,22 +231,8 @@ podman run --rm --network "$NET" "$IMAGE" \
 EOS
   chmod +x /tmp/smoke-rootless-net.sh
   if [ "$(id -u)" = "0" ]; then
-    if ! command -v newuidmap >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
-      apt-get install -y -qq uidmap slirp4netns >/dev/null 2>&1 || true
-    fi
-    if ! id smokeuser >/dev/null 2>&1; then
-      useradd -m -s /bin/bash smokeuser || true
-    fi
-    grep -q '^smokeuser:' /etc/subuid 2>/dev/null || \
-      echo 'smokeuser:100000:65536' >> /etc/subuid || true
-    grep -q '^smokeuser:' /etc/subgid 2>/dev/null || \
-      echo 'smokeuser:100000:65536' >> /etc/subgid || true
-    mkdir -p /tmp/smoke-xdg
-    chown smokeuser:smokeuser /tmp/smoke-xdg || true
-    if runuser -u smokeuser -- env HOME=/home/smokeuser \
-        XDG_RUNTIME_DIR=/tmp/smoke-xdg \
-        XDG_CONFIG_HOME=/home/smokeuser/.config \
-        SMOKE_IMAGE="$IMAGE" \
+    setup_rootless_user || host_fail "rootless-networking" "could not set up rootless user $ROOTLESS_USER"
+    if run_as_rootless SMOKE_IMAGE="$IMAGE" \
         bash /tmp/smoke-rootless-net.sh > /tmp/smoke-rootless-net.log 2>&1; then
       cat /tmp/smoke-rootless-net.log
       echo "SMOKE-HOST: rootless-networking PASS"

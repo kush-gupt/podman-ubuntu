@@ -354,12 +354,19 @@ jobs:
           sudo rm -rf /var/lib/containers/storage
           sudo rm -f /etc/containers/storage.conf
           sudo rm -rf /etc/containers/networks
+          # The runner user's rootless storage is 4.9-era too; the
+          # rootless smoke sections should create it fresh with 6.x.
+          sudo rm -rf /home/runner/.local/share/containers/storage
       - name: Host smoke (overlay, cgroup v2, rootless networking)
         run: |
           # pasta (rootless networking) needs the tun device; the
-          # runner's smokeuser is not in the tun group.
+          # rootless user is not in the tun group.
           sudo chmod 0666 /dev/net/tun || true
-          sudo env SMOKE_HOST=1 bash scripts/smoke_test.sh
+          # Rootless sections run as the runner user: the image
+          # preconfigures rootless podman for it (real home, user
+          # session, subuid ranges); a synthetic user has no session
+          # and pasta cannot set up networking for it.
+          sudo env SMOKE_HOST=1 SMOKE_ROOTLESS_USER=runner bash scripts/smoke_test.sh
 
   # Build provenance for the .debs this run published: a signed
   # attestation per .deb, verifiable with
