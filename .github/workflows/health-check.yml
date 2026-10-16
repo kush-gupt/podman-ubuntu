@@ -118,7 +118,7 @@ jobs:
           # /proc/sys/net/ipv4/ip_local_port_range: Permission
           # denied") even though the host itself is fine. The smoke
           # targets the environment users get, which is init's.
-          sudo nsenter -t 1 -m -- env SMOKE_HOST=1 bash scripts/smoke_test.sh
+          sudo nsenter -t 1 -m -- env SMOKE_HOST=1 bash "$PWD/scripts/smoke_test.sh"
 
   # Full install + deep smoke from the live repo in clean containers,
   # using the documented README recipe (install_published.sh).
