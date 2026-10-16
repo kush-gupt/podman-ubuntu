@@ -127,6 +127,20 @@ jobs:
             echo 'runner:100000:65536' | sudo tee -a /etc/subuid >/dev/null
           grep -q '^runner:' /etc/subgid 2>/dev/null || \
             echo 'runner:100000:65536' | sudo tee -a /etc/subgid >/dev/null
+          # Rootless networking backend: the runner image denies
+          # pasta the two opens it requires - the parent netns's
+          # /proc/sys/net/ipv4/ip_local_port_range and the target
+          # netns file - for every user and session tried (synthetic
+          # user, runner user in its own session, PID 1 namespace).
+          # Rootless podman itself, rootful netavark networking,
+          # and DNS all work; this is the image's policy, not the
+          # stack. Use slirp4netns, podman's other rootless
+          # backend, so CI still proves rootless networking +
+          # container DNS end to end. On an unrestricted host the
+          # default (pasta) is what users get.
+          mkdir -p ~/.config/containers
+          printf '[network]\ndefault_rootless_network_cmd = "slirp4netns"\n' \
+            > ~/.config/containers/containers.conf
           # Run as the step's own user (runner), not via sudo and
           # not via a synthetic user: that is the environment a
           # user actually gets (real home, real systemd user
