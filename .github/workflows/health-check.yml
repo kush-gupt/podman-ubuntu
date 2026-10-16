@@ -110,6 +110,12 @@ jobs:
           # The runner user's rootless storage is 4.9-era too; the
           # rootless smoke sections should create it fresh with 6.x.
           sudo rm -rf /home/runner/.local/share/containers/storage
+          # Same for the per-user runtime state in /run/user: stale
+          # crun bundle dirs from the image build are not accessible
+          # to the new stack's crun ("access /run/user/<uid>/crun/
+          # <id>: Permission denied"). Runtime state only; the user
+          # session recreates it.
+          for d in /run/user/*/; do sudo rm -rf "${d}crun" "${d}containers"; done
       - name: Host smoke (overlay, cgroup v2, rootless networking)
         run: |
           # pasta (rootless networking) needs the tun device; the
