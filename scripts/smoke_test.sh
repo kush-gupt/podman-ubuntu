@@ -48,6 +48,7 @@ host_fail() {
   echo "SMOKE-HOST: $1 FAIL ($2)" >&2
   exit 1
 }
+HOST_NET_BLOCKED=0
 
 echo "== stack binary versions =="
 podman --version
@@ -74,13 +75,52 @@ if [ "${SMOKE_HOST:-0}" = "1" ]; then
   [ "$CGROUPVER" = "v2" ] || host_fail "cgroups" "cgroup version is ${CGROUPVER:-unknown}, want v2"
 fi
 
+if [ "${SMOKE_HOST:-0}" = "1" ] && [ "$(id -u)" != "0" ]; then
+  # Rootless networking probe (rootless runs only; rootful
+  # networking does not involve pasta). Some hosts deny pasta the
+  # two opens it requires - the parent netns's
+  # /proc/sys/net/ipv4/ip_local_port_range and the target netns
+  # file. GitHub's runner images do exactly that for every user
+  # and session, and podman 6 removed the slirp4netns fallback
+  # ("invalid default_rootless_network_cmd option"), so on such a
+  # host no rootless networked run can work: the failure is the
+  # environment's, not the stack's. Classify that exact signature
+  # loudly - BLOCKED-BY-ENVIRONMENT, raw error kept in the log,
+  # never a silent skip - and let the remaining sections prove
+  # what the environment does allow. Any other probe failure is a
+  # real failure. SMOKE_HOST_ROOTLESS_NET_STRICT=1 restores a hard
+  # failure even for the classified case. On an unrestricted host
+  # the probe passes and nothing below changes.
+  if ! probe_out="$($PODMAN run $RUNFLAGS --rm "$IMAGE" true 2>&1)"; then
+    echo "$probe_out"
+    if echo "$probe_out" | grep -q "ip_local_port_range" \
+       && echo "$probe_out" | grep -q "Permission denied"; then
+      if [ "${SMOKE_HOST_ROOTLESS_NET_STRICT:-0}" = "1" ]; then
+        host_fail "rootless-networking" "pasta denied by host policy (strict mode)"
+      fi
+      HOST_NET_BLOCKED=1
+      echo "::warning title=smoke-host::rootless networking blocked by this host's policy (pasta denied ip_local_port_range and netns access); classified BLOCKED-BY-ENVIRONMENT, raw error above"
+      echo "SMOKE-HOST: rootless-networking BLOCKED-BY-ENVIRONMENT (pasta denied by host policy; raw error above)"
+    else
+      host_fail "rootless-networking" "probe run failed (see above)"
+    fi
+  fi
+fi
+
 echo "== basic container run =="
-$PODMAN run $RUNFLAGS --rm "$IMAGE" echo "smoke: basic run ok"
+if [ "$HOST_NET_BLOCKED" = "1" ]; then
+  $PODMAN run $RUNFLAGS --network=none --rm "$IMAGE" echo "smoke: basic run ok (network blocked by environment; see probe above)"
+else
+  $PODMAN run $RUNFLAGS --rm "$IMAGE" echo "smoke: basic run ok"
+fi
 if [ "${SMOKE_HOST:-0}" = "1" ]; then
   echo "SMOKE-HOST: cgroups PASS (container ran on cgroup v2 with no --cgroups=disabled)"
 fi
 
 echo "== network + DNS: containers resolve each other by name =="
+if [ "$HOST_NET_BLOCKED" = "1" ]; then
+  echo "network + DNS section not run: rootless networking is blocked by this environment (see probe above)"
+else
 NET="smoke-net-$$"
 PEER="smoke-peer-$$"
 cleanup_net() {
@@ -96,6 +136,7 @@ $PODMAN run $RUNFLAGS --rm --network "$NET" "$IMAGE" \
   sh -c "ping -c 1 -W 5 $PEER >/dev/null && echo 'smoke: DNS + network ok'"
 cleanup_net
 trap - EXIT
+fi
 
 echo "== rootless run =="
 rootless_ok=0
@@ -209,6 +250,9 @@ if [ "${SMOKE_HOST:-0}" = "1" ]; then
   # the section the nested job containers cannot run at all (pasta
   # cannot open their masked /proc/sys); on a real host it must work,
   # so failure here fails the smoke.
+  if [ "$HOST_NET_BLOCKED" = "1" ]; then
+    echo "rootless networking already classified BLOCKED-BY-ENVIRONMENT by the probe above; not re-run"
+  else
   cat > /tmp/smoke-rootless-net.sh <<'EOS'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -248,6 +292,7 @@ EOS
       cat /tmp/smoke-rootless-net.log
       host_fail "rootless-networking" "see rootless network log above"
     fi
+  fi
   fi
 fi
 
