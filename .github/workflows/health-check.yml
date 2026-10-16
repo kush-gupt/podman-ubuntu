@@ -119,13 +119,23 @@ jobs:
       - name: Host smoke (overlay, cgroup v2, rootless networking)
         run: |
           # pasta (rootless networking) needs the tun device; the
-          # rootless user is not in the tun group.
+          # runner user is not in the tun group.
           sudo chmod 0666 /dev/net/tun || true
-          # Rootless sections run as the runner user: the image
-          # preconfigures rootless podman for it (real home, user
-          # session, subuid ranges); a synthetic user has no session
-          # and pasta cannot set up networking for it.
-          sudo env SMOKE_HOST=1 SMOKE_ROOTLESS_USER=runner bash scripts/smoke_test.sh
+          # Rootless podman needs subuid/subgid ranges for the user;
+          # the image ships them for runner, make sure.
+          grep -q '^runner:' /etc/subuid 2>/dev/null || \
+            echo 'runner:100000:65536' | sudo tee -a /etc/subuid >/dev/null
+          grep -q '^runner:' /etc/subgid 2>/dev/null || \
+            echo 'runner:100000:65536' | sudo tee -a /etc/subgid >/dev/null
+          # Run as the step's own user (runner), not via sudo and
+          # not via a synthetic user: that is the environment a
+          # user actually gets (real home, real systemd user
+          # session, rootless by default). Every attempt to fake it
+          # (runuser to a created user, nsenter) broke pasta or
+          # crun on identity mismatches the real session does not
+          # have. Rootful host execution is covered by
+          # install_published.sh's proof run in the step above.
+          SMOKE_HOST=1 bash scripts/smoke_test.sh
 
   # Full install + deep smoke from the live repo in clean containers,
   # using the documented README recipe (install_published.sh).
