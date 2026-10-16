@@ -61,6 +61,25 @@ def make_deb(workdir, pkg, arch, marker):
     return deb
 
 
+def make_deb_versioned(workdir, pkg, arch, version, marker):
+    src = os.path.join(workdir, f"src-{pkg}-{arch}-{version}")
+    os.makedirs(os.path.join(src, "DEBIAN"), exist_ok=True)
+    os.makedirs(os.path.join(src, "usr", "share", pkg), exist_ok=True)
+    with open(os.path.join(src, "DEBIAN", "control"), "w") as f:
+        f.write(f"Package: {pkg}\nVersion: {version}\n"
+                f"Architecture: {arch}\nMaintainer: Test <t@example>\n"
+                f"Section: admin\nPriority: optional\n"
+                f"Description: fake package for the reprepro sim\n")
+    with open(os.path.join(src, "usr", "share", pkg, "marker"), "w") as f:
+        f.write(marker + "\n")
+    for dirpath, _dirs, _files in os.walk(src):
+        os.chmod(dirpath, 0o755)
+    deb = os.path.join(workdir, f"{pkg}_{version}_{arch}.deb")
+    subprocess.run(["dpkg-deb", "--build", "--root-owner-group", src, deb],
+                   check=True, capture_output=True)
+    return deb
+
+
 @unittest.skipUnless(HAVE_TOOLS, "reprepro/dpkg-deb not installed")
 class TestRepreproStaleReplacement(unittest.TestCase):
     def setUp(self):
@@ -261,6 +280,87 @@ class TestRepreproRollbackDrill(unittest.TestCase):
         self.assertNotIn(self.VERSION_B, self.index_text())
 
 
+@unittest.skipUnless(HAVE_TOOLS, "reprepro/dpkg-deb not installed")
+class TestRepreproPoolCompleteness(unittest.TestCase):
+    """The PR #20 scenario, encoded: a component pin moves in ONE
+    track to a version already built (and pooled) under another
+    track. The build matrix creates no new cells for it (manifest
+    skip is keyed without track), so publish must complete the
+    target suite from the pool or the bump silently never ships,
+    which is exactly what happened to the v5 suites."""
+
+    STABLE = "stable-2404"
+    V5 = "v5-2404"
+    OLD = "1.0-1~noble"
+    NEW = "2.0-1~noble"
+    COMMON_OLD = "2.0-1~noble"
+    COMMON_NEW = "3.0-1~noble"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="reprepro-pool-")
+        self.base = os.path.join(self.tmp, "repo")
+        conf = os.path.join(self.base, "conf")
+        os.makedirs(conf)
+        with open(os.path.join(conf, "distributions"), "w") as f:
+            for suite in (self.STABLE, self.V5):
+                f.write(f"Origin: test\nLabel: test\nCodename: {suite}\n"
+                        f"Suite: {suite}\nArchitectures: amd64 arm64\n"
+                        f"Components: main\nDescription: sim repo\n\n")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def reprepro(self, *args):
+        return subprocess.run(["reprepro", "-b", self.base, *args],
+                              check=True, capture_output=True, text=True)
+
+    def include(self, suite, deb):
+        self.reprepro("includedeb", suite, deb)
+
+    def listed(self, suite, pkg):
+        out = self.reprepro("list", suite, pkg).stdout
+        return publish_repo.parse_listed(out)
+
+    def test_pool_completeness_fills_other_track_suite(self):
+        # Publish round 1 (stable only): stackpkg NEW + commonpkg
+        # COMMON_NEW land in the stable suite and therefore the pool.
+        for arch in ("amd64", "arm64"):
+            self.include(self.STABLE, make_deb_versioned(
+                self.tmp, "stackpkg", arch, self.NEW, "new"))
+        self.include(self.STABLE, make_deb_versioned(
+            self.tmp, "commonpkg", "all", self.COMMON_NEW, "new-common"))
+        # The v5 suite's current state: the OLD pins.
+        for arch in ("amd64", "arm64"):
+            self.include(self.V5, make_deb_versioned(
+                self.tmp, "stackpkg", arch, self.OLD, "old"))
+        self.include(self.V5, make_deb_versioned(
+            self.tmp, "commonpkg", "all", self.COMMON_OLD, "old-common"))
+
+        # Publish round 2 for v5 with NO new artifacts: completeness
+        # must source both pins from the pool.
+        missing = publish_repo.ensure_stack(
+            self.base, self.V5,
+            {"stackpkg": "2.0", "commonpkg": "3.0"})
+        self.assertEqual(missing, [])
+        # includedeb replaces the suite's previous version, so the
+        # completed suite lists exactly the new pins (matching the
+        # live repo, where suites carry one version per package).
+        self.assertEqual(self.listed(self.V5, "stackpkg"),
+                         {(self.NEW, "amd64"), (self.NEW, "arm64")})
+        self.assertEqual(self.listed(self.V5, "commonpkg"),
+                         {(self.COMMON_NEW, "amd64"),
+                          (self.COMMON_NEW, "arm64")})
+        # The stable suite is untouched by the v5 completion.
+        self.assertEqual(self.listed(self.STABLE, "stackpkg"),
+                         {(self.NEW, "amd64"), (self.NEW, "arm64")})
+        # A pin that exists nowhere must be reported, not shipped
+        # around: the caller turns this into a failed publish.
+        self.assertEqual(
+            publish_repo.ensure_stack(self.base, self.V5,
+                                      {"ghostpkg": "9.9"}),
+            [(self.V5, "ghostpkg", "9.9")])
+
+
 class TestCheckLiveRepo(unittest.TestCase):
     import check_live_repo as clr
 
@@ -304,6 +404,66 @@ class TestCheckLiveRepo(unittest.TestCase):
             self.clr.check_index("nightly", "24.04", "arm64", text, ""), [])
         self.assertTrue(
             self.clr.check_index("nightly", "24.04", "arm64", "", ""))
+
+    PINS = {"conmon": "2.2.1", "crun": "1.30.1",
+            "containers-common": "0.69.2", "netavark": "2.1.0",
+            "aardvark-dns": "2.1.0", "passt": "20260925",
+            "podman": "6.1.4", "podman-suite": "6.1.4"}
+
+    def test_matching_pins_pass(self):
+        self.assertEqual(
+            self.clr.check_index("stable", "24.04", "amd64",
+                                 self.GOOD, "6.1.4", self.PINS), [])
+
+    def test_stale_component_pins_fail(self):
+        # The PR #20 shape: podman and the package set are right, but
+        # the suite still serves the pre-bump component versions.
+        stale = (self.GOOD
+                 .replace("2.2.1-1~noble", "2.1.13-1~noble")
+                 .replace("1.30.1-1~noble", "1.21-1~noble")
+                 .replace("0.69.2-1~noble", "0.67.2-1~noble"))
+        problems = self.clr.check_index("v5", "22.04", "arm64",
+                                        stale, "6.1.4", self.PINS)
+        for pkg in ("conmon", "crun", "containers-common"):
+            self.assertTrue(
+                any(pkg in p and "pinned" in p for p in problems),
+                f"no pin problem reported for {pkg}: {problems}")
+
+    def test_pin_matches_any_listed_version_and_any_suffix(self):
+        # Older versions may linger next to the pin (prune keeps 3),
+        # and the suffix follows the Ubuntu release (~jammy here).
+        text = self.GOOD.replace("-1~noble", "-1~jammy")
+        text = text.replace(
+            "Package: crun\nVersion: 1.30.1-1~jammy",
+            "Package: crun\nVersion: 1.21-1~jammy")
+        text += "Package: crun\nVersion: 1.30.1-1~jammy\n\n"
+        self.assertEqual(
+            self.clr.check_index("stable", "22.04", "amd64",
+                                 text, "6.1.4", self.PINS), [])
+
+    def test_upstream_of(self):
+        self.assertEqual(self.clr.upstream_of("2.2.1-1~noble"), "2.2.1")
+        self.assertEqual(self.clr.upstream_of("20261014-1~jammy"),
+                         "20261014")
+        self.assertEqual(self.clr.upstream_of("1.30.1"), "1.30.1")
+
+    def test_stack_package_pins_shape(self):
+        versions = {"v5": "5.8.9", "stable": "6.1.4"}
+        stacks = {"5.8.9": {"conmon": "2.2.1", "crun": "1.30.1",
+                            "containers-common": "0.69.2",
+                            "netavark": "1.16.0", "aardvark-dns": "1.16.0",
+                            "passt": "20261014",
+                            "passt_sha": "8ba41320",
+                            "go": "1.26.1", "rust": "1.85.0",
+                            "podman": "5.8.9"}}
+        pins = self.clr.stack_package_pins("v5", versions, stacks)
+        self.assertEqual(pins["podman"], "5.8.9")
+        self.assertEqual(pins["podman-suite"], "5.8.9")
+        self.assertEqual(pins["passt"], "20261014")
+        for tool in ("go", "rust", "passt_sha"):
+            self.assertNotIn(tool, pins)
+        self.assertIsNone(
+            self.clr.stack_package_pins("nightly", versions, stacks))
 
 
 if __name__ == "__main__":

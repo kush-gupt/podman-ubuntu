@@ -295,6 +295,13 @@ jobs:
           printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
           apt-get update -qq
           apt-get install -y -qq podman-suite
+      - name: Assert the published index serves the pinned stack
+        # Presence + podman version is not enough: after PR #20 the
+        # v5 component pins moved in components.json but never reached
+        # the v5 suites, and every check stayed green. check_live_repo
+        # asserts each component's served upstream version against
+        # packaging/components.json for this cell.
+        run: python3 scripts/check_live_repo.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
       - name: Run a container on the published stack
         run: |
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")

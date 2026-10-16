@@ -110,6 +110,107 @@ def replace_stale(base, suite, pkg, dver, darch):
     return True
 
 
+# --- publish completeness ---------------------------------------------------
+# The build matrix skips (component, version) cells already recorded in
+# the manifest, keyed WITHOUT track: a version built for the stable
+# stack is "built" for v5 too, because the deb bytes are identical for
+# the same Ubuntu release. But the artifact loop below only includes
+# this run's artifacts into suites, so when a component pin moves in
+# one track only (PR #20: v5 aligned to conmon 2.2.1 / crun 1.30.1 /
+# containers-common 0.69.2, all already built under stable), no v5
+# cells were created, publish shipped passt only, and every v5 suite
+# kept serving the old pins while all checks stayed green (they
+# asserted podman version and package presence, not component pins).
+# The completeness pass closes that hole at the source: after the
+# artifact includes, every suite in this run's tracks must carry its
+# track's full pinned stack; anything missing is included from the
+# shared pool (same deb files, distro-suffixed versions), and anything
+# missing from the pool too fails the publish loudly instead of
+# shipping an incomplete suite.
+
+
+def upstream_of(debian_version):
+    """Upstream part of a Debian version: 2.2.1-1~noble -> 2.2.1."""
+    if "-" in debian_version:
+        return debian_version.rsplit("-", 1)[0]
+    return debian_version
+
+
+def pool_debs(base, pkg):
+    """Every .deb for pkg under the reprepro pool."""
+    return sorted(glob.glob(os.path.join(base, "pool", "**",
+                                         f"{pkg}_*.deb"), recursive=True))
+
+
+def suite_suffix(base, suite):
+    """The distro suffix (~noble) this suite's packages carry, read
+    from any version already listed in it; None when the suite lists
+    nothing yet."""
+    out = run("reprepro", "-b", base, "list", suite,
+              capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and "~" in parts[2]:
+            return parts[2].rsplit("~", 1)[1]
+    return None
+
+
+def ensure_stack(base, suite, expected):
+    """Make `suite` carry every (package, upstream pin) in `expected`,
+    including pool debs for pins the suite does not list yet.
+
+    Returns the list of (suite, package, pin) that could not be
+    sourced from artifacts (already included by the caller) or the
+    pool; the caller fails the publish when it is non-empty.
+    reprepro's includedeb replaces the suite's previous version of
+    a package, so a completed suite lists exactly the pin (the live
+    indices confirm suites carry one version per package)."""
+    missing = []
+    suffix = suite_suffix(base, suite)
+    for pkg, pin in sorted(expected.items()):
+        out = run("reprepro", "-b", base, "list", suite, pkg,
+                  capture_output=True, text=True).stdout
+        listed = {v for (v, _a) in parse_listed(out)}
+        if any(upstream_of(v) == pin for v in listed):
+            continue
+        candidates = []
+        for deb in pool_debs(base, pkg):
+            dver = deb_field(deb, "Version")
+            if upstream_of(dver) == pin:
+                candidates.append(deb)
+        if suffix is not None:
+            candidates = [d for d in candidates
+                          if deb_field(d, "Version").endswith("~" + suffix)]
+        elif len({deb_field(d, "Version") for d in candidates}) > 1:
+            # Empty suite and several distro builds in the pool:
+            # cannot tell which belongs here; fail loudly below.
+            candidates = []
+        if not candidates:
+            missing.append((suite, pkg, pin))
+            continue
+        removed = False
+        for deb in candidates:
+            if replace_stale(base, suite, pkg,
+                             deb_field(deb, "Version"),
+                             deb_field(deb, "Architecture")):
+                removed = True
+        if removed:
+            run("reprepro", "-b", base, "deleteunreferenced",
+                capture_output=True, text=True)
+        for deb in candidates:
+            r = run("reprepro", "-b", base, "includedeb", suite, deb,
+                    capture_output=True, text=True, check=False)
+            if r.returncode != 0:
+                print(f"includedeb {suite} {deb} (pool completion) "
+                      f"failed:", flush=True)
+                print(r.stdout, flush=True)
+                print(r.stderr, flush=True)
+                sys.exit(1)
+        print(f"completed {suite}: {pkg} {pin} included from pool",
+              flush=True)
+    return missing
+
+
 def main():
     try:
         subkey_b64 = os.environ["APT_SIGNING_SUBKEY"]
@@ -275,6 +376,35 @@ def main():
                     sys.exit(1)
         print(f"included {comp} {ver} (tracks:{sorted(g['tracks'])}, "
               f"Ubuntu {ubuntu}, {arch})", flush=True)
+
+    # --- completeness: every suite carries its track's pinned stack --------
+    # Runs after the artifact includes and before pruning. Nightly is
+    # exempt by design (its suites serve a podman snapshot only, built
+    # against the stable stack). Scoped to this run's tracks, like the
+    # includes above: a nightly-only run must not touch stable/v5.
+    missing = []
+    all_pins = lib.stack_pins()
+    for track in tracks:
+        if track == "nightly":
+            continue
+        pver = lib.versions().get(track)
+        stack = all_pins.get(pver) if pver else None
+        if not stack:
+            missing.append((track, "(stack)", pver))
+            continue
+        expected = {c: stack[c] for c in
+                    ("conmon", "crun", "netavark", "aardvark-dns",
+                     "passt", "containers-common") if c in stack}
+        expected["podman"] = stack.get("podman", pver)
+        expected["podman-suite"] = pver
+        for uv in ubuntus:
+            missing += ensure_stack(aptd, f"{track}-{flat(uv)}", expected)
+    if missing:
+        for suite, pkg, pin in missing:
+            print(f"ERROR: {suite}: pinned {pkg} {pin} is neither in "
+                  f"this run's artifacts nor in the pool; refusing to "
+                  f"publish an incomplete suite", flush=True)
+        sys.exit(1)
 
     # --- prune: keep newest 3 versions per package per suite -----------------
     # Ordering uses dpkg's own version comparison (~ sorts below the bare
