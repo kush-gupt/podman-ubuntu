@@ -131,10 +131,13 @@ else
       # environment carries the runner user's XDG_CONFIG_HOME, and
       # podman-as-smokeuser then tries to read
       # /home/runner/.config/containers/storage.conf, which it
-      # cannot traverse (permission denied).
+      # cannot traverse (permission denied). And podman inherits the
+      # caller's cwd (the checkout under /home/runner, also not
+      # traversable by smokeuser), so start from smokeuser's home.
       runuser -u smokeuser -- env HOME=/home/smokeuser \
         XDG_RUNTIME_DIR=/tmp/smoke-xdg \
         XDG_CONFIG_HOME=/home/smokeuser/.config \
+        bash -c 'cd "$HOME" || exit 1; exec "$@"' _ \
         $PODMAN run $RUNFLAGS "$@" --rm "$IMAGE" \
         echo "smoke: rootless ok"
     }
@@ -185,6 +188,9 @@ if [ "${SMOKE_HOST:-0}" = "1" ]; then
   cat > /tmp/smoke-rootless-net.sh <<'EOS'
 #!/usr/bin/env bash
 set -euo pipefail
+# podman inherits the caller's cwd; when invoked via runuser from a
+# root-owned checkout, that cwd is not traversable by smokeuser.
+cd "$HOME" || cd /tmp
 IMAGE="${SMOKE_IMAGE:-docker.io/library/alpine:latest}"
 NET="smoke-rnet-$$"
 PEER="smoke-rpeer-$$"
