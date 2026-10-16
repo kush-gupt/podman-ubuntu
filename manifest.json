@@ -38,6 +38,9 @@
     "passt": {
       "20260925": {
         "packaging_sha": "e5738bd60f51ec0e7b3b0bb84f30cdc2f9ab"
+      },
+      "20261014": {
+        "packaging_sha": "e5738bd60f51ec0e7b3b0bb84f30cdc2f9ab"
       }
     },
     "aardvark-dns": {
