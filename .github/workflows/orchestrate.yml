@@ -93,6 +93,7 @@ jobs:
       arch: ${{ matrix.arch }}
       track: ${{ matrix.track }}
       extra: ${{ matrix.extra }}
+      force: ${{ inputs.force_rebuild || false }}
 
   level1:
     needs: [setup, level0]
@@ -121,6 +122,7 @@ jobs:
       arch: ${{ matrix.arch }}
       track: ${{ matrix.track }}
       extra: ${{ matrix.extra }}
+      force: ${{ inputs.force_rebuild || false }}
 
   smoke:
     needs: [setup, level0, level1]

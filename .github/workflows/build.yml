@@ -25,6 +25,10 @@ on:
         required: false
         type: string
         default: ""
+      force:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -55,7 +59,15 @@ jobs:
       - name: Skip if already published
         id: skipcheck
         run: |
-          if python3 scripts/is_built.py \
+          # force_rebuild must reach this check, not just the setup
+          # matrix: before this input existed, a force dispatch on an
+          # unchanged tree emitted every cell and then skipped every
+          # build here, leaving smoke with zero artifacts to download
+          # (orchestrate run 38833598382, 2026-10-16).
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "force rebuild requested, not skipping."
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+          elif python3 scripts/is_built.py \
               --component "${{ inputs.component }}" \
               --version "${{ inputs.version }}"; then
             echo "skipped=true" >> "$GITHUB_OUTPUT"

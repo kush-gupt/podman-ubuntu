@@ -456,3 +456,25 @@ class TestSuiteDependencyFloors(unittest.TestCase):
                 text, rf"{comp} \(>= [0-9][^)]*@SUITE@\)",
                 f"podman-suite Depends must floor {comp}")
         self.assertIn("podman (= @PODMAN_VERSION@-1~@SUITE@)", text)
+
+
+class TestForceRebuildPlumbing(unittest.TestCase):
+    """force_rebuild must reach build.yml's skip check, not just the
+    setup matrix. Run 38833598382 (2026-10-16) dispatched with
+    force_rebuild=true on an unchanged tree: setup emitted every
+    cell, every build self-skipped as already published, smoke
+    downloaded zero artifacts and failed all 12 cells."""
+
+    def _read(self, *parts):
+        with open(os.path.join(ROOT, *parts)) as f:
+            return f.read()
+
+    def test_build_workflow_declares_and_honors_force(self):
+        build = self._read(".github", "workflows", "build.yml")
+        self.assertIn("force:", build)
+        self.assertIn('inputs.force', build)
+
+    def test_orchestrate_passes_force_to_both_levels(self):
+        orch = self._read(".github", "workflows", "orchestrate.yml")
+        self.assertEqual(
+            orch.count("force: ${{ inputs.force_rebuild || false }}"), 2)
