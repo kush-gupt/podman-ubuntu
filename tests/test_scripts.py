@@ -68,6 +68,28 @@ class TestKeptCodenames(unittest.TestCase):
         self.assertEqual(lib.kept_codenames(names, ["24.04"]), names)
 
 
+class TestSuiteCodenames(unittest.TestCase):
+    SCRIPT = (
+        'case "$UBUNTU_VERSION" in\n'
+        "  22.04) SUITE=jammy ;;\n"
+        "  24.04) SUITE=noble ;;\n"
+        '  *) echo "Unknown Ubuntu version" >&2; exit 1 ;;\n'
+        "esac\n"
+    )
+
+    def test_parses_case_arms(self):
+        self.assertEqual(lib.suite_codenames(self.SCRIPT),
+                         {"22.04": "jammy", "24.04": "noble"})
+
+    def test_releases_without_codename(self):
+        codenames = {"22.04": "jammy", "24.04": "noble"}
+        self.assertEqual(
+            lib.releases_without_codename(["22.04", "26.10"], codenames),
+            ["26.10"])
+        self.assertEqual(
+            lib.releases_without_codename(["22.04"], codenames), [])
+
+
 class TestWatchGate(unittest.TestCase):
     BASE_V = {"stable": "6.1.3", "v5": "5.8.8"}
     STACK_613 = {"podman": "6.1.3", "crun": "1.30.1", "go": "1.26.1",
@@ -246,6 +268,16 @@ class RepoInvariants(unittest.TestCase):
         self.assertIn("tracks", suites)
         self.assertTrue(suites["ubuntu"])
         self.assertEqual(set(suites["tracks"]), set(lib.versions().keys()))
+
+    def test_every_ubuntu_release_has_a_suite_codename(self):
+        # The PR #23 near-miss: the watcher added Ubuntu 26.10 to
+        # ubuntu-versions.json with no codename arm in
+        # prepare-source.sh, whose case statement exits 1 on unknown
+        # versions; merging would have failed every 26.10 build cell.
+        missing = lib.releases_without_codename(lib.ubuntu_releases())
+        self.assertEqual(missing, [],
+                         f"releases with no suite codename in "
+                         f"scripts/prepare-source.sh: {missing}")
 
 
 class BuildMatrix(unittest.TestCase):
