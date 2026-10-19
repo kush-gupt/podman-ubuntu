@@ -24,6 +24,7 @@ import check_key_expiry  # noqa: E402
 import check_releases  # noqa: E402
 import check_watch_pr  # noqa: E402
 import create_releases  # noqa: E402
+import create_watch_prs  # noqa: E402
 import lib  # noqa: E402
 import publish_repo  # noqa: E402
 import rebase_watch_prs  # noqa: E402
@@ -88,6 +89,99 @@ class TestSuiteCodenames(unittest.TestCase):
             ["26.10"])
         self.assertEqual(
             lib.releases_without_codename(["22.04"], codenames), [])
+
+
+class TestWatchPrSummary(unittest.TestCase):
+    """PR titles from create_watch_prs.pr_summary must describe the
+    branch's actual diff (PR #23's did not)."""
+
+    V = {"stable": "6.1.4", "v5": "5.8.9"}
+    S = {"6.1.4": {"podman": "6.1.4", "crun": "1.30.1"},
+         "5.8.9": {"podman": "5.8.9", "crun": "1.30.1"}}
+    U = ["22.04", "24.04", "26.04"]
+
+    def test_ubuntu_only_change_names_the_release(self):
+        summary = create_watch_prs.pr_summary(
+            self.V, self.V, self.S, self.S, self.U, self.U + ["26.10"])
+        self.assertEqual(summary, "ubuntu releases: +26.10")
+
+    def test_ubuntu_removal_is_named(self):
+        summary = create_watch_prs.pr_summary(
+            self.V, self.V, self.S, self.S, self.U, ["24.04", "26.04"])
+        self.assertEqual(summary, "ubuntu releases: -22.04")
+
+    def test_podman_bump_shows_old_to_new(self):
+        versions = {"stable": "6.1.5", "v5": "5.8.9"}
+        components = dict(self.S)
+        components["6.1.5"] = {"podman": "6.1.5", "crun": "1.30.1"}
+        summary = create_watch_prs.pr_summary(
+            self.V, versions, self.S, components, self.U, self.U)
+        self.assertEqual(summary, "podman stable: 6.1.4 -> 6.1.5")
+
+    def test_component_bump_in_current_stack(self):
+        components = {"6.1.4": {"podman": "6.1.4", "crun": "1.30.2"},
+                      "5.8.9": {"podman": "5.8.9", "crun": "1.30.1"}}
+        summary = create_watch_prs.pr_summary(
+            self.V, self.V, self.S, components, self.U, self.U)
+        self.assertEqual(summary, "crun 1.30.1 -> 1.30.2 (stack 6.1.4)")
+
+    def test_no_change_empty_summary(self):
+        self.assertEqual(create_watch_prs.pr_summary(
+            self.V, self.V, self.S, self.S, self.U, self.U), "")
+
+
+class TestUbuntuWatch(unittest.TestCase):
+    """The watcher seeds a new release's suite codename into
+    prepare-source.sh so its PR arrives complete (the PR #23 gap)."""
+
+    SCRIPT = (
+        'case "$UBUNTU_VERSION" in\n'
+        "  22.04) SUITE=jammy ;;\n"
+        "  24.04) SUITE=noble ;;\n"
+        "  26.04) SUITE=resolute ;;\n"
+        '  *) echo "Unknown Ubuntu version: $UBUNTU_VERSION" >&2; '
+        "exit 1 ;;\n"
+        "esac\n"
+    )
+
+    def test_suite_codename_is_the_adjective(self):
+        self.assertEqual(
+            check_releases.suite_codename(
+                {"cycle": "26.10", "codename": "Stonking Stingray"}),
+            "stonking")
+
+    def test_suite_codename_missing_is_none(self):
+        self.assertIsNone(check_releases.suite_codename({"cycle": "26.10"}))
+        self.assertIsNone(
+            check_releases.suite_codename({"codename": "  "}))
+
+    def test_seed_appends_in_release_order_before_fallback(self):
+        out = check_releases.seed_suite_arm(self.SCRIPT, "26.10", "stonking")
+        self.assertIn("  26.04) SUITE=resolute ;;\n"
+                      "  26.10) SUITE=stonking ;;\n"
+                      "  *)", out)
+
+    def test_seed_inserts_between_existing_arms(self):
+        out = check_releases.seed_suite_arm(self.SCRIPT, "25.04", "plucky")
+        self.assertIn("  24.04) SUITE=noble ;;\n"
+                      "  25.04) SUITE=plucky ;;\n"
+                      "  26.04) SUITE=resolute ;;", out)
+
+    def test_seed_is_idempotent(self):
+        once = check_releases.seed_suite_arm(self.SCRIPT, "26.10", "stonking")
+        self.assertEqual(
+            check_releases.seed_suite_arm(once, "26.10", "stonking"), once)
+        self.assertEqual(
+            check_releases.seed_suite_arm(self.SCRIPT, "24.04", "noble"),
+            self.SCRIPT)
+
+    def test_seeded_arm_satisfies_the_codename_guard(self):
+        out = check_releases.seed_suite_arm(self.SCRIPT, "26.10", "stonking")
+        self.assertEqual(
+            lib.releases_without_codename(
+                ["22.04", "24.04", "26.04", "26.10"],
+                lib.suite_codenames(out)),
+            [])
 
 
 class TestWatchGate(unittest.TestCase):
