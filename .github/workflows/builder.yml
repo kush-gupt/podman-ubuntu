@@ -4,7 +4,14 @@ name: builder-images
 
 on:
   push:
-    paths: ["images/**"]
+    paths:
+      - "images/**"
+      # A merged watch PR that adds an Ubuntu release needs that
+      # release's builder image before orchestrate's build cells can
+      # start; without this path the image only appears at the weekly
+      # rebuild, and the new release's cells fail on the missing image
+      # until then.
+      - "ubuntu-versions.json"
   schedule:
     - cron: "0 3 * * 0" # weekly Sunday 03:00 UTC
   workflow_dispatch:

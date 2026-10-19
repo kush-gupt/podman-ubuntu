@@ -11,6 +11,7 @@ Stdlib only (passt's upstream is a plain git repo, read with git).
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -21,6 +22,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSIONS_FILE = os.path.join(REPO_ROOT, "versions.json")
 UBUNTU_FILE = os.path.join(REPO_ROOT, "ubuntu-versions.json")
 COMPONENTS_FILE = os.path.join(REPO_ROOT, "packaging", "components.json")
+PREPARE_FILE = os.path.join(REPO_ROOT, "scripts", "prepare-source.sh")
 PR_BODY = "/tmp/watch-pr-body.md"
 
 PODMAN_API = "https://api.github.com/repos/containers/podman/releases?per_page=100"
@@ -161,15 +163,56 @@ def passt_head():
         return None
 
 
-def supported_ubuntu():
+def supported_ubuntu_cycles():
+    """endoflife.date cycles for the Ubuntu releases still supported
+    today (full cycle dicts; supported_ubuntu() is the version list)."""
     data = get_json(UBUNTU_EOL_API)
     today = date.today().isoformat()
     out = []
     for cycle in data:
         eol = cycle.get("eol")
         if eol is False or (isinstance(eol, str) and eol > today):
-            out.append(cycle["cycle"])
-    return sorted(out)
+            out.append(cycle)
+    return out
+
+
+def supported_ubuntu():
+    return sorted(c["cycle"] for c in supported_ubuntu_cycles())
+
+
+def suite_codename(cycle):
+    """Suite codename for an endoflife.date cycle: the adjective of the
+    release name ("Stonking Stingray" -> "stonking"). None when the
+    cycle carries no usable codename; the watch then leaves
+    prepare-source.sh alone and the PR flags the gap instead of
+    guessing (build_matrix fails on a release with no codename)."""
+    words = (cycle.get("codename") or "").split()
+    return words[0].lower() if words else None
+
+
+_SUITE_ARM_LINE = re.compile(r"^\s*(\d{2}\.\d{2})\)\s*SUITE=([a-z]+)\s*;;")
+
+
+def seed_suite_arm(text, version, codename):
+    """Insert version's codename arm into prepare-source.sh's case
+    statement, keeping the arms in ascending release order. An existing
+    arm for the version is left exactly as it is, so seeding is
+    idempotent and never rewrites a human's arm."""
+    lines = text.splitlines(keepends=True)
+    arms = [(i, m.group(1)) for i, line in enumerate(lines)
+            if (m := _SUITE_ARM_LINE.match(line))]
+    if any(v == version for _, v in arms):
+        return text
+    arm = f"  {version}) SUITE={codename} ;;\n"
+    for i, v in arms:
+        if _ver_key(v) > _ver_key(version):
+            lines.insert(i, arm)
+            return "".join(lines)
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("*)"):
+            lines.insert(i, arm)
+            return "".join(lines)
+    return text
 
 
 def main():
@@ -236,12 +279,42 @@ def main():
                 stack["passt"] = snap_date
                 stack["passt_sha"] = sha
 
-    supported = supported_ubuntu()
+    cycles = supported_ubuntu_cycles()
+    supported = sorted(c["cycle"] for c in cycles)
+    prepare_text = None
     if ubuntu.get("releases") != supported:
+        old_releases = ubuntu.get("releases") or []
         changes.append(
-            f"ubuntu set: {ubuntu.get('releases')} -> {supported}"
+            f"ubuntu set: {old_releases} -> {supported}"
         )
         ubuntu["releases"] = supported
+        # A new release also needs its suite codename in
+        # prepare-source.sh, or every build cell for it exits 1 (the
+        # PR #23 gap). Seed the arm from the same endoflife.date data
+        # that found the release so the PR arrives complete; when no
+        # codename is published, flag it for a human instead of
+        # guessing, and script-tests keeps the PR red until it exists.
+        codenames = {c["cycle"]: suite_codename(c) for c in cycles}
+        for rel in supported:
+            if rel in old_releases:
+                continue
+            codename = codenames.get(rel)
+            if not codename:
+                changes.append(
+                    f"ubuntu {rel}: no codename on endoflife.date; add "
+                    f"its suite arm to scripts/prepare-source.sh by "
+                    f"hand before merging")
+                continue
+            with open(PREPARE_FILE) as f:
+                current = prepare_text if prepare_text is not None \
+                    else f.read()
+            seeded = seed_suite_arm(current, rel, codename)
+            if seeded != current:
+                prepare_text = seeded
+                changes.append(
+                    f"ubuntu {rel}: suite codename '{codename}' seeded "
+                    f"in scripts/prepare-source.sh (from "
+                    f"endoflife.date; verify before merge)")
 
     out = os.environ.get("GITHUB_OUTPUT")
     if not changes:
@@ -257,6 +330,9 @@ def main():
     with open(UBUNTU_FILE, "w") as f:
         json.dump(ubuntu, f, indent=2)
         f.write("\n")
+    if prepare_text is not None:
+        with open(PREPARE_FILE, "w") as f:
+            f.write(prepare_text)
     if seeded or component_changes:
         with open(COMPONENTS_FILE, "w") as f:
             json.dump(components, f, indent=2, sort_keys=True)
