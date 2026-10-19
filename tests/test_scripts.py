@@ -677,3 +677,13 @@ class TestSmokeFallbackNewSuite(unittest.TestCase):
         guard = orch.index('dists/$SUITE/Release')
         write = orch.index("podman-ubuntu.sources", guard)
         self.assertLess(guard, write)
+
+    def test_nightly_suites_require_existing_release(self):
+        # nightly.yml's smoke writes nightly-<flat> and stable-<flat>
+        # stanzas; a new release's first nightly run has neither
+        # suite published for it yet (nightly-2610, PR #23 follow-up).
+        with open(os.path.join(ROOT, ".github", "workflows",
+                               "nightly.yml")) as f:
+            nightly = f.read()
+        self.assertIn('dists/$S/Release', nightly)
+        self.assertIn("leaving it out of the smoke sources", nightly)
