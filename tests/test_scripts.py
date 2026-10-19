@@ -635,3 +635,23 @@ class TestInstallPublished(unittest.TestCase):
                 capture_output=True, text=True, env=env)
             self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
             self.assertIn("NO-PUBLISHED-STACK", proc.stdout)
+
+
+class TestSmokeFallbackNewSuite(unittest.TestCase):
+    """The smoke job adds the published suite as a fallback apt
+    source, but a brand-new suite has no Release file in the live
+    repo yet and apt-get update hard-fails on that (exit 100 in
+    install_debs.py). PR #23's 26.10 cells hit it once the
+    install_published exit-3 fix let them reach the install step.
+    The fallback must be conditional on the suite existing."""
+
+    def test_fallback_source_requires_existing_release(self):
+        with open(os.path.join(ROOT, ".github", "workflows",
+                               "orchestrate.yml")) as f:
+            orch = f.read()
+        self.assertIn('dists/$SUITE/Release', orch)
+        self.assertIn("fallback repo skipped", orch)
+        # The sources file is written only inside the guard.
+        guard = orch.index('dists/$SUITE/Release')
+        write = orch.index("podman-ubuntu.sources", guard)
+        self.assertLess(guard, write)
