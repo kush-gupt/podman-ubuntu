@@ -2,7 +2,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2610
 Codename: stable-2610
-Date: Mon, 19 Oct 2026 18:41:32 UTC
+Date: Mon, 19 Oct 2026 19:08:31 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 26.10

@@ -28,6 +28,9 @@
       },
       "7.0.0~git20261019.179aed5": {
         "packaging_sha": "971770e37e97ec0e7b3b0bb84f30cdc2f9ab"
+      },
+      "7.0.0~git20261019.1644490": {
+        "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
       }
     },
     "containers-common": {

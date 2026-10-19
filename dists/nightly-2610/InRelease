@@ -1,0 +1,39 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Suite: nightly-2610
+Codename: nightly-2610
+Date: Mon, 19 Oct 2026 19:08:31 UTC
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu nightly track for Ubuntu 26.10
+MD5Sum:
+ 3b19e260807e6af253adadbdf60e93a8 1021 main/binary-amd64/Packages
+ 1db6044dbffe8b1553c72857531f826d 651 main/binary-amd64/Packages.gz
+ ba1101c465adec80210df92f9b5a4d81 159 main/binary-amd64/Release
+ b75e42c742c88f8a66a48909fcfb8362 1021 main/binary-arm64/Packages
+ 498d2a3ac3248f67663530c5ca463f6c 646 main/binary-arm64/Packages.gz
+ fb0db79ac44cc69c698595eb2648c280 159 main/binary-arm64/Release
+SHA1:
+ 0fb5ab986f26383f53b52b73698fbd1292854d43 1021 main/binary-amd64/Packages
+ ae9ed7c886f1bb9887ebdf44dbd2b8a3ba862a3d 651 main/binary-amd64/Packages.gz
+ efbb56b160b752c87520730baab8b4427179a228 159 main/binary-amd64/Release
+ 22258310763d26378388253cb32617bf0671022e 1021 main/binary-arm64/Packages
+ d255255dd7022bc066870ba93c47996e41acbdbb 646 main/binary-arm64/Packages.gz
+ e5f79597f024dc353caf13349c74d005d23aef98 159 main/binary-arm64/Release
+SHA256:
+ 445bc50eb591eb9cc163fb3dbe93cdee5fa374697e2fc4032229360136a54e2d 1021 main/binary-amd64/Packages
+ cd09d9ec881de3382989605ce9e4fdc57bbc46358b28526f837c6236e7cf2a68 651 main/binary-amd64/Packages.gz
+ 67f8e4400c7ec1c24d3db6180ad2a75ae50a18171a51b9124f3a462e0b23061c 159 main/binary-amd64/Release
+ 3ec90a62ad75d67dc40a879abf681490a52fb46422e661c3c4af6de6279b3443 1021 main/binary-arm64/Packages
+ a56edcc4a0bad8a8f89e129171928a19c0bde397f7f4978214e500e9596fce37 646 main/binary-arm64/Packages.gz
+ e5a98c0e7912e981ddd8b6a9bc3a2900650bfe087cb1019cde2e9b33206441ed 159 main/binary-arm64/Release
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatZqrwAKCRB8516xqrdY
+E4LcAQCcq1G9vpquuUtvj5dWFXYjqsSJWOx+hThI1zsEYpJPRAD/U33Bgw58OH2k
+qExKc+dYQ5u7YCiqhLFkxYw9YaJqpQA=
+=qiav
+-----END PGP SIGNATURE-----
