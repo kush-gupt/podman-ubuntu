@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2604
 Codename: stable-2604
-Date: Fri, 16 Oct 2026 01:37:14 UTC
+Date: Mon, 19 Oct 2026 09:49:44 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 26.04
@@ -32,8 +32,8 @@ SHA256:
  587c19a2ac54eda89e12fd2483b0e1b900d2ae2853c8ebbc9e8edaeb139c4863 157 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatF/ygAKCRB8516xqrdY
-E3WOAQDPJQP5dCID17A+zcCKuXsR9uA5Ch+wfjGDPwvdOXSLfQD/d/A9Aui5997D
-jFVqlVYWc6SFLROM/q/rSKrKY3wgAQQ=
-=vkap
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatXnuAAKCRB8516xqrdY
+Ey+9AP9Ye7FyWnZMm3sVJEy+KIHWLUOzphc2Ym3/cCI5O84N3wEA6OtVhgMHvSkR
+XwHELldAQbyLEMmvEUKJ+bSQE84cOQI=
+=YLk6
 -----END PGP SIGNATURE-----

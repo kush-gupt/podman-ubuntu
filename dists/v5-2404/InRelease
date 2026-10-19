@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: v5-2404
 Codename: v5-2404
-Date: Fri, 16 Oct 2026 01:37:14 UTC
+Date: Mon, 19 Oct 2026 09:49:44 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu v5 track for Ubuntu 24.04
@@ -32,8 +32,8 @@ SHA256:
  568e44d8f9f17827fa2e75f6ced4015d7d5a06065a6c8c8c31f444065bdb40fe 149 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatF/ygAKCRB8516xqrdY
-Ezs8APkBTSDGZIyvTaSCY/lviQ8BaHYXkzqB/FHQ1FCaAWdFhwEAjRH86ESqiEk7
-T65tEKq4062h5N14qEz+Ye5K6hNPgwo=
-=GnyU
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatXnuAAKCRB8516xqrdY
+E+12AQDsH15Yb+y2DNSWa+DRaMaQ+xOHK8skQ3e42Qg1dNMkdgD+L+0u/nS0HOyI
+o9pSjuqYUegbCoCG88IcTG+fL2C6mQo=
+=6tCn
 -----END PGP SIGNATURE-----

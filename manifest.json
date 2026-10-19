@@ -25,6 +25,9 @@
       },
       "7.0.0~git20261015.aa8f845": {
         "packaging_sha": "a141dddce824ec0e7b3b0bb84f30cdc2f9ab"
+      },
+      "7.0.0~git20261019.179aed5": {
+        "packaging_sha": "971770e37e97ec0e7b3b0bb84f30cdc2f9ab"
       }
     },
     "containers-common": {

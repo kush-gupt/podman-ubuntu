@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2204
 Codename: stable-2204
-Date: Fri, 16 Oct 2026 01:37:14 UTC
+Date: Mon, 19 Oct 2026 09:49:44 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 22.04
@@ -32,8 +32,8 @@ SHA256:
  c34e7cdf11a9c449a7f8f0ffa66892cf06438ed576d1c58288d368997d9d2098 157 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatF/ygAKCRB8516xqrdY
-E4rsAQChqoxxf6jZ3ZsXF/bP4+BcttrRyqXvkps9+uTUgBSyjAD/YubWqGmegnRC
-S1Lp/QRQnAxhbEk+dMBctyaHsVBphQw=
-=NOzR
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatXnuAAKCRB8516xqrdY
+E02hAPsHtNDdRWzcLNs/uL9ha+Fp/OpzO4tYk/M++RPlEXx1vwD/UwCriFxKTWd6
+P1dWuiYynrKz4L6YKrkWi86XSrKjqAA=
+=vpwb
 -----END PGP SIGNATURE-----
