@@ -604,3 +604,34 @@ class TestForceRebuildPlumbing(unittest.TestCase):
         orch = self._read(".github", "workflows", "orchestrate.yml")
         self.assertEqual(
             orch.count("force: ${{ inputs.force_rebuild || false }}"), 2)
+
+
+class TestInstallPublished(unittest.TestCase):
+    """install_published.sh's documented contract: exit 3 when the
+    cell's suite has no published podman yet. PR #23's smoke cells
+    proved a brand-new suite instead died with curl's exit 22: the
+    missing index (HTTP 404) failed index_podman_version's pipeline
+    under pipefail before the empty-result check could run."""
+
+    def test_missing_index_exits_3_not_curl_22(self):
+        with tempfile.TemporaryDirectory() as td:
+            stub = os.path.join(td, "bin")
+            os.makedirs(stub)
+            # curl: every fetch 404s, like a suite that never published.
+            with open(os.path.join(stub, "curl"), "w") as f:
+                f.write("#!/bin/sh\nexit 22\n")
+            with open(os.path.join(stub, "apt-get"), "w") as f:
+                f.write("#!/bin/sh\nexit 0\n")
+            with open(os.path.join(stub, "dpkg"), "w") as f:
+                f.write("#!/bin/sh\necho amd64\n")
+            for name in ("curl", "apt-get", "dpkg"):
+                os.chmod(os.path.join(stub, name), 0o755)
+            env = dict(os.environ,
+                       PATH=stub + os.pathsep + os.environ["PATH"])
+            proc = subprocess.run(
+                ["bash", os.path.join(ROOT, "scripts",
+                                      "install_published.sh"),
+                 "stable", "26.10"],
+                capture_output=True, text=True, env=env)
+            self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+            self.assertIn("NO-PUBLISHED-STACK", proc.stdout)

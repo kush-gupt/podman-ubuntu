@@ -37,8 +37,16 @@ index_podman_version() {
   # (EPIPE, "failure writing output") and pipefail + set -e kill
   # the script. That race failed 1 of 30 install cells on
   # 2026-10-15 (smoke 22.04/v5/arm64, orchestrate 38776419215).
+  # The `|| true` matters just as much: for a suite that has never
+  # published (a new Ubuntu release's first run) the index URL is a
+  # 404, curl exits 22, and pipefail would propagate that as this
+  # function's status, so the caller died with exit 22 before ever
+  # reaching the empty-result check that produces the documented
+  # exit 3. A failed fetch means "no published version", which is
+  # exactly what an empty result already means at both call sites.
   curl -fsSL "$(index_url "$1")" 2>/dev/null | awk \
-    '/^Package: /{p=($2=="podman")} p && /^Version: / && !seen {print $2; seen=1}'
+    '/^Package: /{p=($2=="podman")} p && /^Version: / && !seen {print $2; seen=1}' \
+    || true
 }
 
 apt-get update -qq
