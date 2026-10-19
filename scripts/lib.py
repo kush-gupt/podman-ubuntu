@@ -9,6 +9,7 @@ import functools
 import glob
 import json
 import os
+import re
 import subprocess
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +34,38 @@ def stack_pins():
 
 def ubuntu_releases():
     return load_json("ubuntu-versions.json")["releases"]
+
+
+_SUITE_ARM = re.compile(r"^\s*(\d{2}\.\d{2})\)\s*SUITE=([a-z]+)\s*;;")
+
+
+def suite_codenames(text=None):
+    """Ubuntu release -> suite codename (e.g. "24.04" -> "noble"), parsed
+    from prepare-source.sh's case statement. That case statement is the
+    build's single source of truth for the map: prepare-source.sh stamps
+    the codename into every deb version and exits 1 on a release it has
+    no arm for, so this parser exists to check the map, never to
+    replace it."""
+    if text is None:
+        with open(os.path.join(REPO_ROOT, "scripts",
+                               "prepare-source.sh")) as f:
+            text = f.read()
+    out = {}
+    for line in text.splitlines():
+        m = _SUITE_ARM.match(line)
+        if m:
+            out[m.group(1)] = m.group(2)
+    return out
+
+
+def releases_without_codename(releases, codenames=None):
+    """Releases from ubuntu-versions.json that prepare-source.sh cannot
+    build for. A watch PR that adds a release without seeding its
+    codename arm merges green and then every build cell for the new
+    release exits 1; build_matrix.py fails on this list instead."""
+    if codenames is None:
+        codenames = suite_codenames()
+    return [r for r in releases if r not in codenames]
 
 
 def suites():

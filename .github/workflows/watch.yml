@@ -35,7 +35,7 @@ jobs:
           git config user.name "podman-ubuntu-bot"
           git config user.email "podman-ubuntu-bot@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add versions.json ubuntu-versions.json packaging/components.json
+          git add versions.json ubuntu-versions.json packaging/components.json scripts/prepare-source.sh
           git commit -m "chore(watch): $SUMMARY"
           git push -u origin "$BRANCH"
           echo "Pushed $BRANCH; PR will be created by the watch-pr cron."

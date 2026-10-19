@@ -32,6 +32,18 @@ def resolve_version(comp, m, stack):
 
 
 def main():
+    # Every supported release needs a suite codename in
+    # prepare-source.sh before any matrix is emitted (including the
+    # --suites list builder.yml consumes): a release without one fails
+    # every one of its build cells at prepare time, minutes in, instead
+    # of failing here in seconds.
+    missing = lib.releases_without_codename(lib.ubuntu_releases())
+    if missing:
+        print(f"ERROR: Ubuntu releases {missing} have no suite codename "
+              f"in scripts/prepare-source.sh; add a case arm for each "
+              f"(the watcher seeds one from endoflife.date when it adds "
+              f"a release)", file=sys.stderr)
+        return 1
     if sys.argv[1:] == ["--suites"]:
         print(json.dumps(lib.suites()))
         return 0
