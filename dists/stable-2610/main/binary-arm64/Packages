@@ -1,0 +1,146 @@
+Package: aardvark-dns
+Version: 2.1.0-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 2450
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
+Priority: optional
+Section: admin
+Filename: pool/main/a/aardvark-dns/aardvark-dns_2.1.0-1~stonking_arm64.deb
+Size: 802768
+SHA256: ad1048c0f7398d1c50afe356a061fe1e3f8e7b505edc09e9d6f6c57673120c91
+SHA1: b6e7a3aedb91309ec6a5551fe57c3fcb5e8855c2
+MD5sum: 2e210da553a62374e302b8ef8d7e97fe
+Description: DNS server for container networks
+ Aardvark-dns provides DNS resolution for Netavark-managed container
+ networks. Required by Podman 6.
+
+Package: conmon
+Version: 2.2.1-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 207
+Depends: libc6 (>= 2.38), libglib2.0-0t64 (>= 2.76.0), libsystemd0
+Priority: optional
+Section: admin
+Filename: pool/main/c/conmon/conmon_2.2.1-1~stonking_arm64.deb
+Size: 35130
+SHA256: c1c26082a26b6b977f67f65e92d7e1b32e17e034623cac701af94c652cc57548
+SHA1: 7b14c1eaae7767342234838b2d9b7a12172a99fa
+MD5sum: a6643e97c041f2f729261f740e562bc0
+Description: OCI container runtime monitor
+ conmon is the container monitor used by Podman and CRI-O: it watches the
+ primary process of the container, handles logging, and reports the exit code.
+
+Package: containers-common
+Version: 0.69.2-1~stonking
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 67
+Breaks: golang-github-containers-common, golang-github-containers-image
+Replaces: golang-github-containers-common, golang-github-containers-image
+Provides: golang-github-containers-common, golang-github-containers-image
+Priority: optional
+Section: admin
+Filename: pool/main/c/containers-common/containers-common_0.69.2-1~stonking_all.deb
+Size: 16798
+SHA256: 6b43fab30cae4fd1cd14239e516462c4ab9b63424c476cfc98954e9ba36085a4
+SHA1: ce5e5476e9f681466eff5478b0b46844c0e03b59
+MD5sum: 6d599d64b1c2b3f28c379ee83439cbc5
+Description: shared configuration for the containers ecosystem
+ Default configuration files (containers.conf, registries.conf, policy.json,
+ storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
+
+Package: crun
+Version: 1.30.1-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 2287
+Depends: libc6 (>= 2.38), libcap2 (>= 1:2.10), libjson-c5 (>= 0.15), libseccomp2 (>= 2.3.0), libsystemd0 (>= 246)
+Priority: optional
+Section: admin
+Filename: pool/main/c/crun/crun_1.30.1-1~stonking_arm64.deb
+Size: 508462
+SHA256: e6fa01dab5c8062d810ee02bcb8b16a92bfaf0966f12e7e6d664fb02c4b47996
+SHA1: 97ff0103f4725cca576afa189ee9779c5876b6cc
+MD5sum: 271b0e6f4da5932f6db8185032527e2d
+Description: fast and lightweight OCI runtime written in C
+ crun is a fast and low-memory-footprint OCI container runtime, fully
+ written in C. It is the default runtime used by the podman-ubuntu stack.
+
+Package: netavark
+Version: 2.1.0-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 10280
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2), nftables, aardvark-dns
+Priority: optional
+Section: admin
+Filename: pool/main/n/netavark/netavark_2.1.0-1~stonking_arm64.deb
+Size: 3042580
+SHA256: c7b1776bf188e1ac8028d19abbb1796d8aabbb74ef153f27d0307b0763a15b21
+SHA1: d98bf7ed2cd3751a74704fad933260e91c68ef1b
+MD5sum: 81326b0a76977ea37e0eabc20c217265
+Description: OCI container network stack
+ Netavark is the container network stack used by Podman 4.4 and newer,
+ replacing CNI. Required by Podman 6.
+
+Package: passt
+Version: 20261014-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 577
+Depends: libc6 (>= 2.38)
+Priority: optional
+Section: admin
+Filename: pool/main/p/passt/passt_20261014-1~stonking_arm64.deb
+Size: 179388
+SHA256: 36df417ff142ffe2615ecce93167ede6d4a009b7b26ecd819e5dc85287805d06
+SHA1: 55794ca8212b4e09fdd175a1ce93c009265bde0b
+MD5sum: a365c6eef586a70ef009df3184dc7990
+Description: user-mode networking daemons for rootless containers
+ passt and pasta provide user-mode networking for rootless containers and
+ virtual machines. pasta is the default rootless networking backend for
+ Podman 6, replacing slirp4netns.
+
+Package: podman
+Version: 6.1.4-1~stonking
+Architecture: arm64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 72770
+Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
+Recommends: containers-common
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman/podman_6.1.4-1~stonking_arm64.deb
+Size: 22113864
+SHA256: 75d11239ce16dcf8ea8352cf284f1ae2d8a8588eab4021b4215ab59d6757d7af
+SHA1: dc0530667d56bdd35894898ac308ac1ffa16ea25
+MD5sum: 4c098e5691e065f3e83ba55070ce58c5
+Description: daemonless container engine for managing OCI containers
+ Podman manages pods, containers, and container images without requiring a
+ central daemon. It provides a Docker-compatible command line interface and
+ supports rootless operation.
+ .
+ This package is built from upstream releases by the podman-ubuntu project;
+ the packaging is maintained to Debian policy with the intent of proposing
+ it to Debian/Ubuntu proper.
+
+Package: podman-suite
+Version: 6.1.4-1~stonking
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 9
+Depends: podman (= 6.1.4-1~stonking), conmon (>= 2.1.13-1~stonking), crun (>= 1.21-1~stonking), netavark (>= 1.16.0-1~stonking), aardvark-dns (>= 1.16.0-1~stonking), passt (>= 20260925-1~stonking), containers-common (>= 0.67.2-1~stonking)
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman-suite/podman-suite_6.1.4-1~stonking_all.deb
+Size: 2010
+SHA256: d707aa1e59d7e8b3cbc8a3e12ea0c0405ba1f993ea670617375f06d65cfc190f
+SHA1: 7354eec2472be40e71378f004294be4a773322f9
+MD5sum: c82e654d10236b5324dbd9c1fffa5f9d
+Description: complete Podman container stack
+ Meta-package pulling in the full podman-ubuntu stack at one consistent
+ version set: podman plus its runtime, networking, and configuration
+ components.
+

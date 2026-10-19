@@ -54,6 +54,15 @@ SignWith: 7CE75EB1AAB75813
 
 Origin: podman-ubuntu
 Label: podman-ubuntu
+Codename: stable-2610
+Suite: stable-2610
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu stable track for Ubuntu 26.10
+SignWith: 7CE75EB1AAB75813
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
 Codename: v5-2204
 Suite: v5-2204
 Architectures: amd64 arm64
@@ -77,5 +86,14 @@ Suite: v5-2604
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu v5 track for Ubuntu 26.04
+SignWith: 7CE75EB1AAB75813
+
+Origin: podman-ubuntu
+Label: podman-ubuntu
+Codename: v5-2610
+Suite: v5-2610
+Architectures: amd64 arm64
+Components: main
+Description: podman-ubuntu v5 track for Ubuntu 26.10
 SignWith: 7CE75EB1AAB75813
 

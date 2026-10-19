@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: nightly-2204
 Codename: nightly-2204
-Date: Mon, 19 Oct 2026 09:49:44 UTC
+Date: Mon, 19 Oct 2026 18:41:32 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu nightly track for Ubuntu 22.04
@@ -32,8 +32,8 @@ SHA256:
  3d9343347b6e0a24c2289ef83dbc900fe1f0196d4fe918ee81a40a3d1220582b 159 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatXnuAAKCRB8516xqrdY
-E3wCAQC9bOWVGGmos0HWP813zO4jOROX3PaWx669R/0iQL1E6QD8D8/lK3vuJ+p8
-bNWTj/V5BASSi8Ot5n7KBPbJm2jhyAE=
-=XZHA
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatZkXAAKCRB8516xqrdY
+E44XAQCz5jumuGG89Fsh8Um1Hgmq4183JD9CH4luEg1VbhcO+AEAqc3NfuDrqaHl
+h8w7Kjf750FyOExIs5sS2h/kO3COJwI=
+=YvyQ
 -----END PGP SIGNATURE-----

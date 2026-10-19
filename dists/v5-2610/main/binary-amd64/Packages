@@ -1,0 +1,146 @@
+Package: aardvark-dns
+Version: 1.16.0-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 2742
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
+Priority: optional
+Section: admin
+Filename: pool/main/a/aardvark-dns/aardvark-dns_1.16.0-1~stonking_amd64.deb
+Size: 885522
+SHA256: e54d3d27bca65fa497019b0763651cde89f59898a27c57081f91efc784b23fdd
+SHA1: 1933954a9d319bb6ed628bc340a04a16c9eca850
+MD5sum: 5c037df5c78f9b286c549904ec39eb43
+Description: DNS server for container networks
+ Aardvark-dns provides DNS resolution for Netavark-managed container
+ networks. Required by Podman 6.
+
+Package: conmon
+Version: 2.2.1-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 175
+Depends: libc6 (>= 2.38), libglib2.0-0t64 (>= 2.76.0), libsystemd0
+Priority: optional
+Section: admin
+Filename: pool/main/c/conmon/conmon_2.2.1-1~stonking_amd64.deb
+Size: 37128
+SHA256: 837767536a2b9f0fce4e40afd418146fc4d0b6e042cc7a33e1e57d1ce5ca28e4
+SHA1: e12c58dff6ce1459e0b5fa61d40bc3e4cd7c9760
+MD5sum: cdb856037f008dafe12f1b9c3dd0db0a
+Description: OCI container runtime monitor
+ conmon is the container monitor used by Podman and CRI-O: it watches the
+ primary process of the container, handles logging, and reports the exit code.
+
+Package: containers-common
+Version: 0.69.2-1~stonking
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 67
+Breaks: golang-github-containers-common, golang-github-containers-image
+Replaces: golang-github-containers-common, golang-github-containers-image
+Provides: golang-github-containers-common, golang-github-containers-image
+Priority: optional
+Section: admin
+Filename: pool/main/c/containers-common/containers-common_0.69.2-1~stonking_all.deb
+Size: 16798
+SHA256: 6b43fab30cae4fd1cd14239e516462c4ab9b63424c476cfc98954e9ba36085a4
+SHA1: ce5e5476e9f681466eff5478b0b46844c0e03b59
+MD5sum: 6d599d64b1c2b3f28c379ee83439cbc5
+Description: shared configuration for the containers ecosystem
+ Default configuration files (containers.conf, registries.conf, policy.json,
+ storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
+
+Package: crun
+Version: 1.30.1-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 2160
+Depends: libc6 (>= 2.38), libcap2 (>= 1:2.10), libjson-c5 (>= 0.15), libseccomp2 (>= 2.3.0), libsystemd0 (>= 246)
+Priority: optional
+Section: admin
+Filename: pool/main/c/crun/crun_1.30.1-1~stonking_amd64.deb
+Size: 500316
+SHA256: 3524cc6ba16e9445c62062336b868cccbc4fbfe67a173360cc110ff9c7ba2448
+SHA1: 2b666b437c87f286fd81cb483760f47c321e37aa
+MD5sum: d7e2c732c61f3e9538a4bea615e18d67
+Description: fast and lightweight OCI runtime written in C
+ crun is a fast and low-memory-footprint OCI container runtime, fully
+ written in C. It is the default runtime used by the podman-ubuntu stack.
+
+Package: netavark
+Version: 1.16.0-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 13438
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.2), iptables, aardvark-dns
+Priority: optional
+Section: admin
+Filename: pool/main/n/netavark/netavark_1.16.0-1~stonking_amd64.deb
+Size: 3758772
+SHA256: b902ce990f22e1fee750acc72ddbf9055ad60e5267b779168f47b8cebb0233e1
+SHA1: 7db0af04c3780325c798e2696096f81cd492bfce
+MD5sum: 516f86d61767e21559dec860a0519e80
+Description: OCI container network stack
+ Netavark is the container network stack used by Podman 4.4 and newer,
+ replacing CNI. Required by Podman 6.
+
+Package: passt
+Version: 20261014-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 931
+Depends: libc6 (>= 2.38)
+Priority: optional
+Section: admin
+Filename: pool/main/p/passt/passt_20261014-1~stonking_amd64.deb
+Size: 369100
+SHA256: 2edcc8b4d9d16c3ef39f25b3a86bed7e14e66b7627246459c61c53a78b38a05a
+SHA1: 81aeea7cefc9a50f4806dbaf9ab153eb6430764f
+MD5sum: 5e3e4b559a3737a791576b2c1f14a6aa
+Description: user-mode networking daemons for rootless containers
+ passt and pasta provide user-mode networking for rootless containers and
+ virtual machines. pasta is the default rootless networking backend for
+ Podman 6, replacing slirp4netns.
+
+Package: podman
+Version: 5.8.9-1~stonking
+Architecture: amd64
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 78073
+Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
+Recommends: containers-common
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman/podman_5.8.9-1~stonking_amd64.deb
+Size: 24363746
+SHA256: 603940b55afe12ee6a7a4f1c101fc0be1c75064697d9722f39c37a133f110511
+SHA1: c2f245bdf9c6d03d77915f97c70b5eb304fb4f9c
+MD5sum: d46ce46066904c7a430618ae92c16e11
+Description: daemonless container engine for managing OCI containers
+ Podman manages pods, containers, and container images without requiring a
+ central daemon. It provides a Docker-compatible command line interface and
+ supports rootless operation.
+ .
+ This package is built from upstream releases by the podman-ubuntu project;
+ the packaging is maintained to Debian policy with the intent of proposing
+ it to Debian/Ubuntu proper.
+
+Package: podman-suite
+Version: 5.8.9-1~stonking
+Architecture: all
+Maintainer: Kush Gupta <kushalgupta@gmail.com>
+Installed-Size: 9
+Depends: podman (= 5.8.9-1~stonking), conmon (>= 2.1.13-1~stonking), crun (>= 1.21-1~stonking), netavark (>= 1.16.0-1~stonking), aardvark-dns (>= 1.16.0-1~stonking), passt (>= 20260925-1~stonking), containers-common (>= 0.67.2-1~stonking)
+Priority: optional
+Section: admin
+Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~stonking_all.deb
+Size: 2016
+SHA256: 6e344625f0221083dd31f1650ab06708f28c5993a258b7a113684bbaaffaf54a
+SHA1: f80837938994ff7f802215e38362947eac7a15d6
+MD5sum: ed92d280fb02bb44c600b1a03233c21f
+Description: complete Podman container stack
+ Meta-package pulling in the full podman-ubuntu stack at one consistent
+ version set: podman plus its runtime, networking, and configuration
+ components.
+

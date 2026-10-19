@@ -7,10 +7,10 @@ Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
 Priority: optional
 Section: admin
 Filename: pool/main/a/aardvark-dns/aardvark-dns_1.16.0-1~jammy_amd64.deb
-Size: 894160
-SHA256: b7085052e1db5270f652523cf59f2c2a50775d5c0ca14ab4c7adbac3e7ebdb96
-SHA1: 528ee5b6e8f171b511d324ac93cb11ada864b888
-MD5sum: 2c44b1615caa77c84843b51866f6b6f6
+Size: 894428
+SHA256: b8c69eb8e8b2b61ea392790f9e7cdbce81aede4d7477ea21f6b812bf9dbbb3de
+SHA1: 6bbc9633a06d846d18ab71523f1b2d84ea19cae9
+MD5sum: 90ef98d827d854301078687249435b7d
 Description: DNS server for container networks
  Aardvark-dns provides DNS resolution for Netavark-managed container
  networks. Required by Podman 6.
@@ -24,10 +24,10 @@ Depends: libc6 (>= 2.34), libglib2.0-0 (>= 2.35.8), libsystemd0
 Priority: optional
 Section: admin
 Filename: pool/main/c/conmon/conmon_2.2.1-1~jammy_amd64.deb
-Size: 37274
-SHA256: 1e066e3f9cdbd880f1faafd8c9a0d83a52c379be3f05aedea23a873c7f03db1c
-SHA1: 0bbcfbf869f4738406d4ba1814d4a6d665b78c49
-MD5sum: b680bba4749e4b68d6a0e9b544baa2f0
+Size: 37290
+SHA256: 15d34cbc757bff63063a4753ef5e6a5c85d857a8ae5c4230b69375b399b230de
+SHA1: 4476aae30c9d64ff9054d431c428b71fdc22d491
+MD5sum: ddcb4202ce5e70a3c96431db2b0102f1
 Description: OCI container runtime monitor
  conmon is the container monitor used by Podman and CRI-O: it watches the
  primary process of the container, handles logging, and reports the exit code.
@@ -43,10 +43,10 @@ Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
 Filename: pool/main/c/containers-common/containers-common_0.69.2-1~jammy_all.deb
-Size: 16764
-SHA256: deb5efbdf0c97c15131d02dbb0a5014f2c30553bb443776269bbb4ec3545e538
-SHA1: 1f65a529b6a3ae780832db06a5a14e46d4e9e5c3
-MD5sum: cdd783883c4500c37bad0ad5ee2b03fd
+Size: 16756
+SHA256: 21bac884f70361470aed05fb36a774e28876aa51004eb103fc641b5c2538f822
+SHA1: ed269f1d3a5b267b843d04cbeeb70444d3a7ec54
+MD5sum: b0fe20726d8f1557a9813b2ac055a71e
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -60,10 +60,10 @@ Depends: libc6 (>= 2.34), libcap2 (>= 1:2.10), libjson-c5 (>= 0.15), libseccomp2
 Priority: optional
 Section: admin
 Filename: pool/main/c/crun/crun_1.30.1-1~jammy_amd64.deb
-Size: 504262
-SHA256: d424f8e7a905ec0aae9947f79fdc01099f48ca6e95d7fe14d3cd80c1062c8672
-SHA1: 97e9c8326bd49a257393efdf4a0736407be81a10
-MD5sum: ee2d8faef38ff92e24e295931186dc39
+Size: 504460
+SHA256: 33ce9af090442d26db5e3bffe00c122b55a22fb1112e01f9bb6981ae843ee726
+SHA1: 4b6f32a587255d83c369dcb884b31404f0b5a101
+MD5sum: d44c431b3af4002fa5794581c9235626
 Description: fast and lightweight OCI runtime written in C
  crun is a fast and low-memory-footprint OCI container runtime, fully
  written in C. It is the default runtime used by the podman-ubuntu stack.
@@ -77,10 +77,10 @@ Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2), iptables, aardvark-dns
 Priority: optional
 Section: admin
 Filename: pool/main/n/netavark/netavark_1.16.0-1~jammy_amd64.deb
-Size: 3807776
-SHA256: 66b1de1d7e5eb5f583f39bf35f352b430ac39b6b8c0d3e06dcd70607dff78cac
-SHA1: 64fe57141482c538aa2505b11e321450f134fe84
-MD5sum: c4e3a0caf9bf4933e6bedb72ecde6539
+Size: 3807918
+SHA256: f15545bb3f68c4ab8971a105c49464a87533befea98fab255f79c6d18cda5c6b
+SHA1: f62b5c942e3bd423aa68214ebb28663319cee482
+MD5sum: 1b4614f3fd0876a6ef7b112626da8662
 Description: OCI container network stack
  Netavark is the container network stack used by Podman 4.4 and newer,
  replacing CNI. Required by Podman 6.
@@ -94,10 +94,10 @@ Depends: libc6 (>= 2.34)
 Priority: optional
 Section: admin
 Filename: pool/main/p/passt/passt_20261014-1~jammy_amd64.deb
-Size: 367754
-SHA256: 7f690e75d9a9dda9d039603324cd8eef43954299439af0792a8437736bfc0c5c
-SHA1: 6e4eaf391ed0cc3239bd428b41f713ae5a188824
-MD5sum: 56bf44f03eea94615a5cc0108f2fefd6
+Size: 367722
+SHA256: c2cf3fef052f4640a9b4446cc278734b9a298897501515f57a3386d4fbe4f8e4
+SHA1: e6886df46f9e0e459808a02e751bf38e24a60eb1
+MD5sum: 907145da906c7da38909bb9a88f378bb
 Description: user-mode networking daemons for rootless containers
  passt and pasta provide user-mode networking for rootless containers and
  virtual machines. pasta is the default rootless networking backend for
@@ -109,14 +109,14 @@ Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 77993
 Depends: libc6 (>= 2.34), libgpgme11 (>= 1.5.0), libseccomp2 (>= 2.5.0), conmon (>= 2.0), crun | runc, netavark
-Recommends: podman-docker, containers-common
+Recommends: containers-common
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman/podman_5.8.9-1~jammy_amd64.deb
-Size: 24446652
-SHA256: 7e08c3daed116da3a3512e0af13ab60ad8b22ada1126595764acf57bef86fa10
-SHA1: cb4b11e17fb386389a6364d62b865fa4ec16ab57
-MD5sum: cba02699735ff273d96f33f238f96e70
+Size: 24446580
+SHA256: bfa30c954beec23e9e8be00da3aeacd3bbdbee6a75c851e26049f985db7e5eb6
+SHA1: 82b64b6e56f9b2255b7341254cb07f67021fb0e5
+MD5sum: 4b0fe1f6f592a6556940f6d6289908be
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -135,10 +135,10 @@ Depends: podman (= 5.8.9-1~jammy), conmon (>= 2.1.13-1~jammy), crun (>= 1.21-1~j
 Priority: optional
 Section: admin
 Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~jammy_all.deb
-Size: 2006
-SHA256: 43b6bec87bcd99f61d5a23bd8bc0abb4f59c94fbd9321f5357c2904b24b60624
-SHA1: dde13121f676dc07f2af37dc6307d027351ecad8
-MD5sum: 840e77de22620409faed47ca687a48e9
+Size: 2000
+SHA256: b8d2da13220da3c06ada11723947c688b716c7d5f549b9a9f24bbdd0c3df2a51
+SHA1: 4b933c791daaba6061b38d3ec6151b4124f34062
+MD5sum: 368ddb6c014c5cba7560badd949c6197
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration
