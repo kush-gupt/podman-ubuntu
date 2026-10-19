@@ -184,11 +184,23 @@ jobs:
           chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
           # Suite names omit the dot: v5-2404, not v5-24.04.
           SUITE="${{ matrix.track }}-$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
-          printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$SUITE" > /etc/apt/sources.list.d/podman-ubuntu.sources
-          # Pin our repo above Ubuntu's: Ubuntu 26.04 ships aardvark-dns
-          # 1.16.0-3 which outranks our 1.16.0-1~resolute (the ~ sorts lower),
-          # but Ubuntu's installs to a different path. Prefer ours.
-          printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
+          # A brand-new suite has no published Release file yet, and
+          # apt-get update hard-fails on a configured suite without
+          # one ("does not have a Release file", exit 100 inside
+          # install_debs.py) — that killed PR #23's 26.10 smoke cells
+          # even though every package for a never-published suite
+          # comes from this run's artifacts by construction (is_built
+          # is per-suite). Add the fallback source only when the
+          # suite actually exists in the live repo.
+          if curl -fsSL -o /dev/null "https://kush-gupt.github.io/podman-ubuntu/dists/$SUITE/Release"; then
+            printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$SUITE" > /etc/apt/sources.list.d/podman-ubuntu.sources
+            # Pin our repo above Ubuntu's: Ubuntu 26.04 ships aardvark-dns
+            # 1.16.0-3 which outranks our 1.16.0-1~resolute (the ~ sorts lower),
+            # but Ubuntu's installs to a different path. Prefer ours.
+            printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
+          else
+            echo "::warning::published suite $SUITE does not exist yet (new suite); fallback repo skipped, installing from this run's artifacts only"
+          fi
           python3 scripts/install_debs.py "${{ matrix.track }}" "${{ matrix.ubuntu_version }}" "${{ matrix.arch }}"
       - name: Deep smoke (versions, basic run, network + DNS, rootless, upgrade report)
         run: bash scripts/smoke_test.sh
