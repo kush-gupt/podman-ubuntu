@@ -37,6 +37,7 @@ case "$UBUNTU_VERSION" in
   22.04) SUITE=jammy ;;
   24.04) SUITE=noble ;;
   26.04) SUITE=resolute ;;
+  26.10) SUITE=stonking ;;
   *) echo "Unknown Ubuntu version: $UBUNTU_VERSION" >&2; exit 1 ;;
 esac
 DEB_VERSION="${VERSION}-1~${SUITE}"

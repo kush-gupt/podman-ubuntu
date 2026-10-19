@@ -584,6 +584,28 @@ class TestSuiteDependencyFloors(unittest.TestCase):
         self.assertIn("podman (= @PODMAN_VERSION@-1~@SUITE@)", text)
 
 
+class TestPodmanRecommends(unittest.TestCase):
+    """podman must not Recommend podman-docker. This project does
+    not build podman-docker, so the Recommend resolves to Ubuntu's
+    build from an older podman source. Ubuntu 26.10's
+    (5.8.6+ds1-2) postinst symlinks /run/docker.sock to the podman
+    socket and hard-fails with EBUSY wherever that path is a
+    mounted socket (any container install with a bind-mounted
+    docker socket — the smoke and verify-published jobs, and user
+    containers alike), which fails the whole stack install. It
+    blocked every 26.10 smoke cell on PR #23; 26.04's 5.7.0 build
+    still configured fine, which is why only the new suite hit it.
+    Nothing in the repo uses the docker CLI shim."""
+
+    def test_podman_does_not_recommend_podman_docker(self):
+        path = os.path.join(ROOT, "packaging", "podman", "debian",
+                            "control")
+        with open(path) as f:
+            text = f.read()
+        self.assertNotIn("podman-docker", text)
+        self.assertIn("Recommends: containers-common", text)
+
+
 class TestForceRebuildPlumbing(unittest.TestCase):
     """force_rebuild must reach build.yml's skip check, not just the
     setup matrix. Run 38833598382 (2026-10-16) dispatched with
