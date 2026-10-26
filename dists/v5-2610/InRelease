@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: v5-2610
 Codename: v5-2610
-Date: Mon, 19 Oct 2026 19:08:31 UTC
+Date: Mon, 26 Oct 2026 10:03:17 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu v5 track for Ubuntu 26.10
@@ -32,8 +32,8 @@ SHA256:
  887312cd74da32d08ac216393f2999727daaeab143ca1a515bcd8a239e82f080 149 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCatZqrwAKCRB8516xqrdY
-Ez7iAQD83DxAqVfwA85/AYslWjnnC7WTB7ECwBfOX5+bbGqoCAD8DrHe6txcy+S9
-EC5rlFTu+2n2PBhQmPFlhtO1+3/svQI=
-=xCrP
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCat8lZQAKCRB8516xqrdY
+E9dBAP0QJ6xtmGMPe+XGtxgVvoPuyf1h2en+PL6mpxKY1S0sDAEA+tnzwAT8UgDf
+ZUBIyXBpt5Ay3G2BJukp1sUzcEDb8gQ=
+=x79V
 -----END PGP SIGNATURE-----
