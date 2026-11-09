@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: v5-2204
 Codename: v5-2204
-Date: Mon, 02 Nov 2026 12:15:40 UTC
+Date: Mon, 09 Nov 2026 12:45:43 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu v5 track for Ubuntu 22.04
@@ -32,8 +32,8 @@ SHA256:
  1cbe21218033cdc228b83e957cc75fecf3474be9c87b987f8a52204ed14806a3 149 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCauh+7AAKCRB8516xqrdY
-E7FxAP0XVb7uY/M8XWY7KUx8rF7A8xtRnUZf72czv03jSITqPgD/aw/F3WNacy8E
-BNKZxT4s4ib5F3cfurqqxxT7F5xRCgc=
-=p58l
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCavHAdwAKCRB8516xqrdY
+E4ZQAQDWUEcFwFhrgfJ212tTqAGBdY5S+S3bB1+DKqzgQ6KyAAEA8NHSXiqbPTsk
+BFcdGIFI2x7P2U2hBDwVTVkq8Yhe4Qs=
+=47SW
 -----END PGP SIGNATURE-----
