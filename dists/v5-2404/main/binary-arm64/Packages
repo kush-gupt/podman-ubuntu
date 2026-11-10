@@ -33,7 +33,7 @@ Description: OCI container runtime monitor
  primary process of the container, handles logging, and reports the exit code.
 
 Package: containers-common
-Version: 0.69.2-1~noble
+Version: 0.70.0-1~noble
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
@@ -42,11 +42,11 @@ Replaces: golang-github-containers-common, golang-github-containers-image
 Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
-Filename: pool/main/c/containers-common/containers-common_0.69.2-1~noble_all.deb
-Size: 16792
-SHA256: 6eec721ec1a05a23ac31739c092d1dba8a8ac780a8d1510b4e7352f58b5f7fd4
-SHA1: 0a40a1bf428665fb134dddf5bfe7b54fb2f02d58
-MD5sum: fb4bca09592a0edf7c7b9fe4e3f9437d
+Filename: pool/main/c/containers-common/containers-common_0.70.0-1~noble_all.deb
+Size: 16822
+SHA256: 993a266718d8596ef181387dad99984c1506891452db3aeb27389b0ae903c2a0
+SHA1: d6369eba2ea4816afe0b43ea4984ab566ff731ad
+MD5sum: 4233cf8c32f36be0a399ec9e0d1141c4
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -86,37 +86,37 @@ Description: OCI container network stack
  replacing CNI. Required by Podman 6.
 
 Package: passt
-Version: 20261014-1~noble
+Version: 20261025-1~noble
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 576
 Depends: libc6 (>= 2.38)
 Priority: optional
 Section: admin
-Filename: pool/main/p/passt/passt_20261014-1~noble_arm64.deb
-Size: 181186
-SHA256: 0b5dde07afc5e5996e26c99457ffb533ffe8b5675e4009d9b25eb2005965eabd
-SHA1: f23c7bf9f268fe2295bdbaee13e745800b5b1cec
-MD5sum: 4ae4442942490697b9ac04cef74c78d9
+Filename: pool/main/p/passt/passt_20261025-1~noble_arm64.deb
+Size: 181184
+SHA256: 61d196080ae6842af907177bc501955761217d5840244a57a93f4ddfcad650a1
+SHA1: 1b3e5a8290a83e82c390c2e0e814cd12035c45d6
+MD5sum: 8bd1be78187aa619d7159da8af7c43d1
 Description: user-mode networking daemons for rootless containers
  passt and pasta provide user-mode networking for rootless containers and
  virtual machines. pasta is the default rootless networking backend for
  Podman 6, replacing slirp4netns.
 
 Package: podman
-Version: 5.8.9-1~noble
+Version: 5.8.10-1~noble
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 72073
+Installed-Size: 72137
 Depends: libc6 (>= 2.38), libgpgme11t64 (>= 1.5.0), libseccomp2 (>= 2.5.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_5.8.9-1~noble_arm64.deb
-Size: 21692878
-SHA256: 59179b2cbeb08836074c1cb8fc4f8ab20060e94c763886a43384b3c58acb2600
-SHA1: 20537b9bb986eebc8510f8f57d9b3c1e2f4f87fe
-MD5sum: f597513ea24523666dd8702f3239adb0
+Filename: pool/main/p/podman/podman_5.8.10-1~noble_arm64.deb
+Size: 21718104
+SHA256: dc9a5ad2538a88ef0e3cd660dd6e36ee35cd961cad2ef3b2f582763162eac0c2
+SHA1: 6644cade943223ab1984fa0e8f4b30acf55c332b
+MD5sum: 5ff1b06b07fb1f6336a0e171907195c4
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -127,18 +127,18 @@ Description: daemonless container engine for managing OCI containers
  it to Debian/Ubuntu proper.
 
 Package: podman-suite
-Version: 5.8.9-1~noble
+Version: 5.8.10-1~noble
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.9-1~noble), conmon (>= 2.1.13-1~noble), crun (>= 1.21-1~noble), netavark (>= 1.16.0-1~noble), aardvark-dns (>= 1.16.0-1~noble), passt (>= 20260925-1~noble), containers-common (>= 0.67.2-1~noble)
+Depends: podman (= 5.8.10-1~noble), conmon (>= 2.1.13-1~noble), crun (>= 1.21-1~noble), netavark (>= 1.16.0-1~noble), aardvark-dns (>= 1.16.0-1~noble), passt (>= 20260925-1~noble), containers-common (>= 0.67.2-1~noble)
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~noble_all.deb
-Size: 2000
-SHA256: f3b3a247158f577c03edb2b1a0a0afe67878ac76ef6669248419cc1f1420b6fb
-SHA1: eb7ab23df4a1945f39e4a5cfd9415336e5261a44
-MD5sum: 82b49221fa2ab852c52feb764ab75d10
+Filename: pool/main/p/podman-suite/podman-suite_5.8.10-1~noble_all.deb
+Size: 2014
+SHA256: 7fd3ef289ed5740413f2941059c9ad492a21f3970a197e7abd2c9bc2ada911de
+SHA1: 12247029edf86ac6d2df77fdfdb7ae6851959441
+MD5sum: 4f6f7eb32b2c204db8dbb42759b10f2b
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

@@ -40,6 +40,12 @@
       },
       "7.0.0~git20261109.b026224": {
         "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
+      },
+      "5.8.10": {
+        "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
+      },
+      "6.2.0": {
+        "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
       }
     },
     "containers-common": {
@@ -48,6 +54,9 @@
       },
       "0.69.2": {
         "packaging_sha": "b459e821c76fec0e7b3b0bb894218420e75e"
+      },
+      "0.70.0": {
+        "packaging_sha": "b459e821c76fec0e7b3b0bb894218420e75e"
       }
     },
     "passt": {
@@ -55,6 +64,9 @@
         "packaging_sha": "e5738bd60f51ec0e7b3b0bb84f30cdc2f9ab"
       },
       "20261014": {
+        "packaging_sha": "e5738bd60f51ec0e7b3b0bb894218420e75e"
+      },
+      "20261025": {
         "packaging_sha": "e5738bd60f51ec0e7b3b0bb894218420e75e"
       }
     },
@@ -99,6 +111,12 @@
         "packaging_sha": "361a5c6f9711ec0e7b3b0bb894218420e75e"
       },
       "6.1.4": {
+        "packaging_sha": "361a5c6f9711ec0e7b3b0bb894218420e75e"
+      },
+      "5.8.10": {
+        "packaging_sha": "361a5c6f9711ec0e7b3b0bb894218420e75e"
+      },
+      "6.2.0": {
         "packaging_sha": "361a5c6f9711ec0e7b3b0bb894218420e75e"
       }
     },

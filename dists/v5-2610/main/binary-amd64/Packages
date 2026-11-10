@@ -33,7 +33,7 @@ Description: OCI container runtime monitor
  primary process of the container, handles logging, and reports the exit code.
 
 Package: containers-common
-Version: 0.69.2-1~stonking
+Version: 0.70.0-1~stonking
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
@@ -42,11 +42,11 @@ Replaces: golang-github-containers-common, golang-github-containers-image
 Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
-Filename: pool/main/c/containers-common/containers-common_0.69.2-1~stonking_all.deb
-Size: 16798
-SHA256: 6b43fab30cae4fd1cd14239e516462c4ab9b63424c476cfc98954e9ba36085a4
-SHA1: ce5e5476e9f681466eff5478b0b46844c0e03b59
-MD5sum: 6d599d64b1c2b3f28c379ee83439cbc5
+Filename: pool/main/c/containers-common/containers-common_0.70.0-1~stonking_all.deb
+Size: 16826
+SHA256: d02467c19858c24457c3ee6d9618a537b506d97d1df11ec76d4809082d95c51c
+SHA1: 628026c806dfec346af993c2172bbf3a147f34af
+MD5sum: 3c7e2f29f5f2bcfdab30f38971fb84c7
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -86,37 +86,37 @@ Description: OCI container network stack
  replacing CNI. Required by Podman 6.
 
 Package: passt
-Version: 20261014-1~stonking
+Version: 20261025-1~stonking
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 931
 Depends: libc6 (>= 2.38)
 Priority: optional
 Section: admin
-Filename: pool/main/p/passt/passt_20261014-1~stonking_amd64.deb
-Size: 369100
-SHA256: 2edcc8b4d9d16c3ef39f25b3a86bed7e14e66b7627246459c61c53a78b38a05a
-SHA1: 81aeea7cefc9a50f4806dbaf9ab153eb6430764f
-MD5sum: 5e3e4b559a3737a791576b2c1f14a6aa
+Filename: pool/main/p/passt/passt_20261025-1~stonking_amd64.deb
+Size: 369102
+SHA256: a9d2ff5954bb7dfc31ec5506c8b0c8c20b03a82f4c7d3efd8d5c616467cb883f
+SHA1: 4004b2d1843bd97e98654a2ef7d84e97251c95a3
+MD5sum: a0a95d384225189ad96108ed34a44763
 Description: user-mode networking daemons for rootless containers
  passt and pasta provide user-mode networking for rootless containers and
  virtual machines. pasta is the default rootless networking backend for
  Podman 6, replacing slirp4netns.
 
 Package: podman
-Version: 5.8.9-1~stonking
+Version: 5.8.10-1~stonking
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 78073
+Installed-Size: 78085
 Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_5.8.9-1~stonking_amd64.deb
-Size: 24363746
-SHA256: 603940b55afe12ee6a7a4f1c101fc0be1c75064697d9722f39c37a133f110511
-SHA1: c2f245bdf9c6d03d77915f97c70b5eb304fb4f9c
-MD5sum: d46ce46066904c7a430618ae92c16e11
+Filename: pool/main/p/podman/podman_5.8.10-1~stonking_amd64.deb
+Size: 24365364
+SHA256: 878d377d0b63e6294c27d52d30c77a0bf880bbb30ff8b1d884affbea5b9ee88f
+SHA1: 63f623f59d4c1349fd7dee53c117c8525713f17f
+MD5sum: 84c080e5bea2e34fde6f671cbf21d3ce
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -127,18 +127,18 @@ Description: daemonless container engine for managing OCI containers
  it to Debian/Ubuntu proper.
 
 Package: podman-suite
-Version: 5.8.9-1~stonking
+Version: 5.8.10-1~stonking
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 5.8.9-1~stonking), conmon (>= 2.1.13-1~stonking), crun (>= 1.21-1~stonking), netavark (>= 1.16.0-1~stonking), aardvark-dns (>= 1.16.0-1~stonking), passt (>= 20260925-1~stonking), containers-common (>= 0.67.2-1~stonking)
+Depends: podman (= 5.8.10-1~stonking), conmon (>= 2.1.13-1~stonking), crun (>= 1.21-1~stonking), netavark (>= 1.16.0-1~stonking), aardvark-dns (>= 1.16.0-1~stonking), passt (>= 20260925-1~stonking), containers-common (>= 0.67.2-1~stonking)
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_5.8.9-1~stonking_all.deb
-Size: 2016
-SHA256: 6e344625f0221083dd31f1650ab06708f28c5993a258b7a113684bbaaffaf54a
-SHA1: f80837938994ff7f802215e38362947eac7a15d6
-MD5sum: ed92d280fb02bb44c600b1a03233c21f
+Filename: pool/main/p/podman-suite/podman-suite_5.8.10-1~stonking_all.deb
+Size: 2018
+SHA256: bf9e37f3e0d6cab90ebc2cfe06103b1b6b68d2bd940161ae6dbd407868f49907
+SHA1: fb2d9f64b9ab96dfa688c7a2dd03a3269b2faffa
+MD5sum: d400c3ad8fe3f8a8e8580bb7e52c2126
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration

@@ -33,7 +33,7 @@ Description: OCI container runtime monitor
  primary process of the container, handles logging, and reports the exit code.
 
 Package: containers-common
-Version: 0.69.2-1~jammy
+Version: 0.70.0-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 67
@@ -42,11 +42,11 @@ Replaces: golang-github-containers-common, golang-github-containers-image
 Provides: golang-github-containers-common, golang-github-containers-image
 Priority: optional
 Section: admin
-Filename: pool/main/c/containers-common/containers-common_0.69.2-1~jammy_all.deb
-Size: 16756
-SHA256: 21bac884f70361470aed05fb36a774e28876aa51004eb103fc641b5c2538f822
-SHA1: ed269f1d3a5b267b843d04cbeeb70444d3a7ec54
-MD5sum: b0fe20726d8f1557a9813b2ac055a71e
+Filename: pool/main/c/containers-common/containers-common_0.70.0-1~jammy_all.deb
+Size: 16808
+SHA256: 09516eece73893891b20a7466b021137645f4ff22810ffd067042fb6beec9641
+SHA1: f2a404870d71f7757d487a6bc62311c39a26d93f
+MD5sum: 2196e1d84424e3c565cff40d855b6b81
 Description: shared configuration for the containers ecosystem
  Default configuration files (containers.conf, registries.conf, policy.json,
  storage.conf, seccomp.json) shared by Podman, Buildah, and Skopeo.
@@ -86,37 +86,37 @@ Description: OCI container network stack
  replacing CNI. Required by Podman 6.
 
 Package: passt
-Version: 20261014-1~jammy
+Version: 20261025-1~jammy
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 432
 Depends: libc6 (>= 2.34)
 Priority: optional
 Section: admin
-Filename: pool/main/p/passt/passt_20261014-1~jammy_arm64.deb
-Size: 181758
-SHA256: 2a7608acbaa7341dc393555bf11550ce6974fe96b33c305db2aa2dca0e2f5d44
-SHA1: d80b4a838b2836435084058cb8f7b1c2c13ef9d3
-MD5sum: 9a36f7770e375be97ea59983ab43f592
+Filename: pool/main/p/passt/passt_20261025-1~jammy_arm64.deb
+Size: 181750
+SHA256: 57ca7a4e864100ae9772af071f36bfa40fbd2f2c76f56a9f8242ea247eea745a
+SHA1: 7f14717461cfaf25c2a160e527f772d797886c28
+MD5sum: 75b6c62b05dfb47171defcbf4ac964e6
 Description: user-mode networking daemons for rootless containers
  passt and pasta provide user-mode networking for rootless containers and
  virtual machines. pasta is the default rootless networking backend for
  Podman 6, replacing slirp4netns.
 
 Package: podman
-Version: 6.1.4-1~jammy
+Version: 6.2.0-1~jammy
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 72702
+Installed-Size: 75872
 Depends: libc6 (>= 2.34), libgpgme11 (>= 1.5.0), libseccomp2 (>= 2.5.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_6.1.4-1~jammy_arm64.deb
-Size: 22160508
-SHA256: 3445e96fcd91d662c314161675896ab947d5b5ed8b115dea886ccc88845122d9
-SHA1: 61bf2db0370998953bd3482b9a40b7d3288e8176
-MD5sum: 438bf4f79fcd6b96dcf450f6cf2866f9
+Filename: pool/main/p/podman/podman_6.2.0-1~jammy_arm64.deb
+Size: 22821770
+SHA256: 56c6cda874256dcb90af6ae3857b61119f75bb2ca0e21fc1f6398eeaaef9531a
+SHA1: 4aa7842f1f1839a781a21e88ee18a40c7b0aa820
+MD5sum: 6b2047cb6bbf7ec4580286957b9001ec
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
@@ -127,18 +127,18 @@ Description: daemonless container engine for managing OCI containers
  it to Debian/Ubuntu proper.
 
 Package: podman-suite
-Version: 6.1.4-1~jammy
+Version: 6.2.0-1~jammy
 Architecture: all
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
 Installed-Size: 9
-Depends: podman (= 6.1.4-1~jammy), conmon (>= 2.1.13-1~jammy), crun (>= 1.21-1~jammy), netavark (>= 1.16.0-1~jammy), aardvark-dns (>= 1.16.0-1~jammy), passt (>= 20260925-1~jammy), containers-common (>= 0.67.2-1~jammy)
+Depends: podman (= 6.2.0-1~jammy), conmon (>= 2.1.13-1~jammy), crun (>= 1.21-1~jammy), netavark (>= 1.16.0-1~jammy), aardvark-dns (>= 1.16.0-1~jammy), passt (>= 20260925-1~jammy), containers-common (>= 0.67.2-1~jammy)
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman-suite/podman-suite_6.1.4-1~jammy_all.deb
-Size: 2002
-SHA256: a891a49bce07240663cb8b324b0e2dd422f2d3d75bae074a20a1824d954e372b
-SHA1: 553eac0cbaab0d68d748996f9c1f8641a2b8821b
-MD5sum: 40cd1f2ce22c4007e726366f98909c27
+Filename: pool/main/p/podman-suite/podman-suite_6.2.0-1~jammy_all.deb
+Size: 2004
+SHA256: 1bb3756cff1c957b29e12acf3fafd33221f68b6d00f5830abd73799e09ff782e
+SHA1: 1d5210e72887ac4b0a94d53fa6d409bf69961e7b
+MD5sum: 7a87cb41bcb5aae8d9efbf63f891f54f
 Description: complete Podman container stack
  Meta-package pulling in the full podman-ubuntu stack at one consistent
  version set: podman plus its runtime, networking, and configuration
