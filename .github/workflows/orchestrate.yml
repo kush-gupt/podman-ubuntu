@@ -29,10 +29,16 @@ on:
       - "scripts/prepare-source.sh"
       - "scripts/publish_repo.py"
       - ".github/workflows/build.yml"
+      - ".github/workflows/builder.yml"
       - ".github/workflows/orchestrate.yml"
   # PRs run the same build+smoke matrix against themselves so packaging
   # changes are validated before merge. The publish job is gated to pushes
   # below: PRs never touch the apt-repo branch or Pages.
+  # builder.yml is in both path lists because the component builds run
+  # inside its toolchain images (build.yml pulls the per-suite builder
+  # image): a builder.yml change — e.g. a Dependabot bump of the GHCR
+  # login action — must produce the required setup/pr-gate contexts, or
+  # branch protection can never be satisfied for such PRs.
   pull_request:
     branches: [main]
     paths:
@@ -49,6 +55,7 @@ on:
       - "scripts/prepare-source.sh"
       - "scripts/publish_repo.py"
       - ".github/workflows/build.yml"
+      - ".github/workflows/builder.yml"
       - ".github/workflows/orchestrate.yml"
   workflow_dispatch:
     inputs:
@@ -465,3 +472,35 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/create_releases.py
+
+  # Stable, aggregate PR check. Branch protection currently requires
+  # `setup`, which proves only that the matrix was computed — not that
+  # any package built or passed smoke. This job succeeds only after
+  # the full PR build and smoke path has succeeded (or was legitimately
+  # skipped because its matrix was empty), so branch protection can
+  # require the single `pr-gate` context instead of chasing dynamic
+  # matrix job names.
+  pr-gate:
+    name: pr-gate
+    needs: [setup, level0, level1, smoke]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require successful build and smoke jobs
+        env:
+          SETUP_RESULT: ${{ needs.setup.result }}
+          LEVEL0_RESULT: ${{ needs.level0.result }}
+          LEVEL1_RESULT: ${{ needs.level1.result }}
+          SMOKE_RESULT: ${{ needs.smoke.result }}
+        run: |
+          echo "setup=$SETUP_RESULT level0=$LEVEL0_RESULT level1=$LEVEL1_RESULT smoke=$SMOKE_RESULT"
+          test "$SETUP_RESULT" = "success"
+          case "$LEVEL0_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+          case "$LEVEL1_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+          if [ "$LEVEL0_RESULT" = "success" ] || [ "$LEVEL1_RESULT" = "success" ]; then
+            test "$SMOKE_RESULT" = "success"
+          else
+            # No build cells were produced; smoke is skipped by design.
+            test "$SMOKE_RESULT" = "skipped"
+          fi
