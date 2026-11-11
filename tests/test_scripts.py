@@ -659,6 +659,133 @@ class TestInstallPublished(unittest.TestCase):
             self.assertIn("NO-PUBLISHED-STACK", proc.stdout)
 
 
+class _FakeProc:
+    def __init__(self, returncode, stdout=""):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = ""
+
+
+class TestRunWithRetries(unittest.TestCase):
+    """lib.run_with_retries backs install_debs.py's apt calls. PR #38
+    (2026-11-11): every smoke cell died at a single-shot apt call
+    when *.ubuntu.com DNS failed on the runners for a few minutes."""
+
+    def test_transient_failures_are_retried_until_success(self):
+        calls = []
+
+        def runner(cmd, capture_output, text):
+            calls.append(cmd)
+            if len(calls) < 3:
+                return _FakeProc(100)
+            return _FakeProc(0)
+
+        slept = []
+        proc = lib.run_with_retries(["apt-get", "install", "x"],
+                                    attempts=5, delay=20,
+                                    sleeper=slept.append, runner=runner)
+        self.assertEqual(proc.returncode, 0)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(slept, [20, 20])
+
+    def test_output_marker_counts_as_failure_despite_rc0(self):
+        # apt-get update exits 0 after a partial fetch; the marker is
+        # the only sign the following install would be doomed.
+        outputs = ["W: Failed to fetch http://archive.ubuntu.com/x  "
+                   "Could not resolve 'archive.ubuntu.com'", ""]
+        calls = []
+
+        def runner(cmd, capture_output, text):
+            calls.append(cmd)
+            return _FakeProc(0, outputs[len(calls) - 1])
+
+        lib.run_with_retries(["apt-get", "update", "-qq"], attempts=5,
+                             delay=0,
+                             fail_output_markers=("Failed to fetch",),
+                             sleeper=lambda s: None, runner=runner)
+        self.assertEqual(len(calls), 2)
+
+    def test_exhausted_attempts_raise(self):
+        def runner(cmd, capture_output, text):
+            return _FakeProc(100)
+
+        with self.assertRaises(subprocess.CalledProcessError):
+            lib.run_with_retries(["apt-get", "update"], attempts=3,
+                                 delay=0, sleeper=lambda s: None,
+                                 runner=runner)
+
+
+class TestAptInstallScript(unittest.TestCase):
+    """scripts/apt_install.sh: the shell twin of run_with_retries,
+    driven here with a stub apt-get on PATH (the TestInstallPublished
+    pattern). The stub's update reports a failed fetch while exiting
+    0 -- exactly what apt did on PR #38 -- so a retry loop keyed on
+    exit codes alone would not fire."""
+
+    STUB = """#!/bin/sh
+count="$APT_STUB_DIR/$1.count"
+n=0
+[ -f "$count" ] && n=$(cat "$count")
+n=$((n + 1))
+echo "$n" > "$count"
+if [ "$1" = "update" ] && [ "$n" -le "$APT_STUB_FAIL_UPDATES" ]; then
+  echo "W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease  Could not resolve 'archive.ubuntu.com'"
+fi
+if [ "$1" = "install" ] && [ "$n" -le "$APT_STUB_FAIL_INSTALLS" ]; then
+  exit 100
+fi
+exit 0
+"""
+
+    def _run(self, td, fail_updates="0", fail_installs="0", attempts="5"):
+        stub = os.path.join(td, "bin")
+        os.makedirs(stub)
+        with open(os.path.join(stub, "apt-get"), "w") as f:
+            f.write(self.STUB)
+        os.chmod(os.path.join(stub, "apt-get"), 0o755)
+        env = dict(os.environ,
+                   PATH=stub + os.pathsep + os.environ["PATH"],
+                   APT_STUB_DIR=td, APT_STUB_FAIL_UPDATES=fail_updates,
+                   APT_STUB_FAIL_INSTALLS=fail_installs,
+                   APT_INSTALL_ATTEMPTS=attempts, APT_INSTALL_DELAY="0")
+        proc = subprocess.run(
+            ["bash", os.path.join(ROOT, "scripts", "apt_install.sh"),
+             "curl", "ca-certificates"],
+            capture_output=True, text=True, env=env)
+        counts = {}
+        for name in ("update", "install"):
+            path = os.path.join(td, f"{name}.count")
+            if os.path.exists(path):
+                with open(path) as f:
+                    counts[name] = int(f.read())
+            else:
+                counts[name] = 0
+        return proc, counts
+
+    def test_update_fetch_failure_is_retried_despite_rc0(self):
+        with tempfile.TemporaryDirectory() as td:
+            proc, counts = self._run(td, fail_updates="2")
+            self.assertEqual(proc.returncode, 0,
+                             proc.stdout + proc.stderr)
+            self.assertEqual(counts["update"], 3)
+            self.assertEqual(counts["install"], 1)
+
+    def test_install_failure_is_retried(self):
+        with tempfile.TemporaryDirectory() as td:
+            proc, counts = self._run(td, fail_installs="1")
+            self.assertEqual(proc.returncode, 0,
+                             proc.stdout + proc.stderr)
+            self.assertEqual(counts["install"], 2)
+
+    def test_gives_up_after_configured_attempts(self):
+        with tempfile.TemporaryDirectory() as td:
+            proc, counts = self._run(td, fail_updates="99", attempts="3")
+            self.assertEqual(proc.returncode, 1,
+                             proc.stdout + proc.stderr)
+            self.assertEqual(counts["update"], 3)
+            self.assertEqual(counts["install"], 0)
+
+
 class TestSmokeFallbackNewSuite(unittest.TestCase):
     """The smoke job adds the published suite as a fallback apt
     source, but a brand-new suite has no Release file in the live

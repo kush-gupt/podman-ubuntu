@@ -49,8 +49,15 @@ index_podman_version() {
     || true
 }
 
-apt-get update -qq
-apt-get install -y -qq curl ca-certificates
+# All apt work goes through apt_install.sh: a single-shot apt-get
+# update/install pair turns a minutes-long DNS/fetch outage on the
+# runners into a failed cell (PR #38, 2026-11-11: all 16 smoke cells
+# died in this script's first two lines when *.ubuntu.com stopped
+# resolving). SCRIPT_DIR resolves this script's own directory so the
+# helper is found however the script was invoked (relative path from
+# a workflow step, absolute path, or sudo on a host).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$SCRIPT_DIR/apt_install.sh" curl ca-certificates
 
 if [ -n "$EXPECTED" ]; then
   # Pages deploys can lag a publish by a few minutes; wait until the
@@ -90,12 +97,11 @@ mkdir -p /etc/apt/preferences.d
 printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' \
   > /etc/apt/preferences.d/podman-ubuntu
 
-apt-get update -qq
 if [ "$TRACK" = "nightly" ]; then
-  apt-get install -y -qq podman conmon crun netavark aardvark-dns passt \
-    containers-common
+  bash "$SCRIPT_DIR/apt_install.sh" podman conmon crun netavark \
+    aardvark-dns passt containers-common
 else
-  apt-get install -y -qq podman-suite
+  bash "$SCRIPT_DIR/apt_install.sh" podman-suite
 fi
 
 INSTALLED="$(dpkg-query -W -f='${Version}' podman)"

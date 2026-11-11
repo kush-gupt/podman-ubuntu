@@ -11,6 +11,8 @@ import json
 import os
 import re
 import subprocess
+import sys
+import time
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ARCHES = ["amd64", "arm64"]
@@ -87,6 +89,46 @@ def kept_codenames(codenames, releases):
             continue
         out.append(c)
     return out
+
+
+def run_with_retries(cmd, attempts=5, delay=20, fail_output_markers=(),
+                     sleeper=None, runner=None):
+    """Run cmd, retrying transient failures, and return the result.
+
+    The shell-side twin of scripts/apt_install.sh, for the Python
+    callers of apt-get (install_debs.py). PR #38 (2026-11-11): a
+    minutes-long DNS outage for *.ubuntu.com on the GitHub runners
+    failed every smoke cell at its first apt call; single-shot network
+    operations in CI turn that class of blip into a failed PR.
+
+    A command counts as failed when it exits non-zero OR when its
+    combined output contains any of fail_output_markers: apt-get
+    update exits 0 after failing to fetch some indexes, and without
+    the marker check the retry would "succeed" and the following
+    install would fail with a misleading "Unable to locate package".
+    Raises CalledProcessError after the last attempt.
+    """
+    if sleeper is None:
+        sleeper = time.sleep
+    if runner is None:
+        runner = subprocess.run
+    last_rc = 1
+    for attempt in range(1, attempts + 1):
+        proc = runner(cmd, capture_output=True, text=True)
+        if proc.stdout:
+            sys.stdout.write(proc.stdout)
+        if proc.stderr:
+            sys.stderr.write(proc.stderr)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        last_rc = proc.returncode
+        if last_rc == 0 and not any(m in out for m in fail_output_markers):
+            return proc
+        if attempt < attempts:
+            print(f"run_with_retries: {' '.join(cmd)} attempt "
+                  f"{attempt}/{attempts} failed (rc={last_rc}); "
+                  f"retrying in {delay}s", file=sys.stderr)
+            sleeper(delay)
+    raise subprocess.CalledProcessError(last_rc, cmd)
 
 
 MANIFEST_URL = os.environ.get(

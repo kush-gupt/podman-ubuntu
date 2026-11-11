@@ -58,11 +58,26 @@ def main():
         sys.exit(f"ERROR: no artifacts for track={track} ubuntu={uver} "
                  f"arch={arch}; refusing to smoke-test an empty install")
 
-    subprocess.run(["apt-get", "update", "-qq"], check=True)
+    # All apt calls go through lib.run_with_retries: PR #38's smoke
+    # cells all died at a single-shot apt call when *.ubuntu.com DNS
+    # failed on the runners for a few minutes (2026-11-11). The
+    # update call also treats a "Failed to fetch" report as failure:
+    # apt-get update exits 0 after a partial fetch, and the next
+    # install then fails with a misleading "Unable to locate package".
+    apt_attempts = int(os.environ.get("APT_INSTALL_ATTEMPTS", "5"))
+    apt_delay = int(os.environ.get("APT_INSTALL_DELAY", "20"))
+
+    def apt(*args, markers=()):
+        return lib.run_with_retries(
+            ["apt-get", *args], attempts=apt_attempts, delay=apt_delay,
+            fail_output_markers=markers)
+
+    apt("update", "-qq",
+        markers=("Failed to fetch", "Could not resolve",
+                 "Temporary failure resolving"))
     # CA certs: the minimal ubuntu container image can't verify registry TLS
     # without them, which breaks image pulls.
-    subprocess.run(["apt-get", "install", "-y", "-qq", "ca-certificates"],
-                   check=True)
+    apt("install", "-y", "-qq", "ca-certificates")
 
     def installed_version(pkg):
         r = subprocess.run(["dpkg-query", "-W", "-f=${Version}", pkg],
@@ -88,9 +103,8 @@ def main():
     # calls the reinstall a downgrade and refuses without the flag.
     # verify_local_versions below remains the guard: every local
     # package must end up at exactly the local build's version.
-    subprocess.run(["apt-get", "install", "-y", "-qq",
-                    "--allow-downgrades"]
-                   + [f"./{d}" for d in sorted(debs)], check=True)
+    apt("install", "-y", "-qq", "--allow-downgrades",
+        *[f"./{d}" for d in sorted(debs)])
     verify_local_versions("after local install")
     # Fill gaps only: incremental builds only produce artifacts for
     # changed components, so a stack package with no local artifact
@@ -104,8 +118,7 @@ def main():
     stack = ["podman", "passt", "conmon", "crun", "aardvark-dns"]
     missing = [p for p in stack if installed_version(p) is None]
     if missing:
-        subprocess.run(["apt-get", "install", "-y", "-qq"] + missing,
-                       check=True)
+        apt("install", "-y", "-qq", *missing)
         verify_local_versions("after gap fill")
 
 

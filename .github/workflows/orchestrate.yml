@@ -184,8 +184,10 @@ jobs:
         # produce artifacts for changed components, so unchanged packages
         # (e.g. podman itself) resolve from the repo, not the artifacts.
         run: |
-          apt-get update -qq
-          apt-get install -y -qq python3 ca-certificates curl
+          # apt_install.sh retries update+install: single-shot apt
+          # turned a minutes-long *.ubuntu.com DNS outage into 16
+          # failed smoke cells on PR #38 (2026-11-11).
+          bash scripts/apt_install.sh python3 ca-certificates curl
           mkdir -p /etc/apt/keyrings
           curl -fsSL https://kush-gupt.github.io/podman-ubuntu/keys/apt-signing.asc -o /etc/apt/keyrings/podman-ubuntu.asc
           chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
@@ -219,7 +221,7 @@ jobs:
         # the system under test here. --no-built-binaries because the
         # binaries come from the .debs above, not a source build.
         run: |
-          apt-get install -y -qq autopkgtest
+          bash scripts/apt_install.sh autopkgtest
           autopkgtest --no-built-binaries packaging/podman -- null
 
   publish:
@@ -251,7 +253,7 @@ jobs:
           pattern: debs-*
           path: debs
       - name: Install reprepro
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq reprepro
+        run: sudo bash scripts/apt_install.sh reprepro
       - name: Assemble, sign and prune the apt repository
         env:
           APT_SIGNING_SUBKEY: ${{ secrets.APT_SIGNING_SUBKEY }}
@@ -290,8 +292,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install podman-suite from the published repository
         run: |
-          apt-get update -qq
-          apt-get install -y -qq curl ca-certificates python3
+          bash scripts/apt_install.sh curl ca-certificates python3
           SUITE="${{ matrix.track }}-$(echo '${{ matrix.ubuntu_version }}' | tr -d .)"
           EXPECTED=$(python3 -c "import json; print(json.load(open('versions.json'))['${{ matrix.track }}'])")
           # Pages deploys can lag the publish job by a few minutes. Wait
@@ -314,8 +315,7 @@ jobs:
           chmod 644 /etc/apt/keyrings/podman-ubuntu.asc
           printf 'Types: deb\nURIs: https://kush-gupt.github.io/podman-ubuntu\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/podman-ubuntu.asc\n' "$SUITE" > /etc/apt/sources.list.d/podman-ubuntu.sources
           printf 'Package: *\nPin: origin kush-gupt.github.io\nPin-Priority: 1001\n' > /etc/apt/preferences.d/podman-ubuntu
-          apt-get update -qq
-          apt-get install -y -qq podman-suite
+          bash scripts/apt_install.sh podman-suite
       - name: Assert the published index serves the pinned stack
         # Presence + podman version is not enough: after PR #20 the
         # v5 component pins moved in components.json but never reached
