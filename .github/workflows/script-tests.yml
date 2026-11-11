@@ -3,6 +3,13 @@
 # class of error in seconds, before the matrix starts.
 name: script-tests
 
+# Only the newest head needs these checks. Cancelling the superseded
+# run also stops its duplicate DEP-8 and reprepro jobs, rather than
+# letting every synchronize burn a full set of runners.
+concurrency:
+  group: script-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [main]

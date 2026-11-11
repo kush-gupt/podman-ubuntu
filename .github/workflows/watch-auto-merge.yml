@@ -10,6 +10,12 @@ on:
     types: [opened, synchronize, reopened]
     branches: [main]
 
+# A synchronize supersedes the gate evaluation for the previous head.
+# Cancel the old evaluation so it cannot race the new head's result.
+concurrency:
+  group: watch-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pull-requests: write
@@ -22,7 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          # The gate needs the commit graph and only the two JSON files
+          # it compares. Defer blob downloads instead of cloning every
+          # blob in history: a full checkout stalled this job for the
+          # entire 10-minute timeout on PR #33.
           fetch-depth: 0
+          filter: blob:none
 
       - name: Evaluate the PR against the auto-merge gate
         id: gate
@@ -37,3 +48,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr merge ${{ github.event.pull_request.number }} --auto --merge
+
+      # Re-evaluate from scratch on every synchronize: if a later push
+      # makes the PR ineligible, an auto-merge enabled for an earlier
+      # head must not survive and merge the new content unseen.
+      - name: Disable auto-merge
+        if: steps.gate.outputs.eligible != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          enabled=$(gh pr view "$PR_NUMBER" --json autoMergeRequest \
+            --jq '.autoMergeRequest != null')
+          if [ "$enabled" = "true" ]; then
+            gh pr merge "$PR_NUMBER" --disable-auto
+          else
+            echo "Auto-merge is not enabled; nothing to disable."
+          fi
