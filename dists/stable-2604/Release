@@ -2,28 +2,28 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2604
 Codename: stable-2604
-Date: Tue, 10 Nov 2026 23:59:39 UTC
+Date: Thu, 12 Nov 2026 20:42:43 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 26.04
 MD5Sum:
- c4bc50876721922ada1bec2b8e27cd35 5984 main/binary-amd64/Packages
- fc7f47c103782af9bcfa10f7783f2d21 2247 main/binary-amd64/Packages.gz
+ 19171055a7c814b580ba350b29ea3517 5984 main/binary-amd64/Packages
+ 01a104179e5d5fe5e2d6d932a633a298 2248 main/binary-amd64/Packages.gz
  0901c9bf0ba29f4dc0d9a60f1cbee6d7 157 main/binary-amd64/Release
- 8713cbe0af2cc46beb3db3a5054efd58 5984 main/binary-arm64/Packages
- 321dbe47a9fc740e5a27198be1d6018e 2246 main/binary-arm64/Packages.gz
+ 60946936cc14c364703d5a0d77837e55 5984 main/binary-arm64/Packages
+ 0a70b1fb36e7cd44683c0ba85e114ece 2243 main/binary-arm64/Packages.gz
  c596fa9373782d7af25f33234a1b12d8 157 main/binary-arm64/Release
 SHA1:
- 40f031adceb6c90cc5062d82c8356d51a4564639 5984 main/binary-amd64/Packages
- 62d555e5163553a25b1370ce475844d9db4748b9 2247 main/binary-amd64/Packages.gz
+ aa834c46a0a0118cb8cff005d8c0045731491684 5984 main/binary-amd64/Packages
+ a1061b64886985fd92636edf3e70cc6ee3d9b195 2248 main/binary-amd64/Packages.gz
  6720b5ce75318786adc3f56ee9888679a302bb3c 157 main/binary-amd64/Release
- 127c64385ef09f53b44b3d724f0dcda80417102c 5984 main/binary-arm64/Packages
- ba4b405c02e1adc3f4d011101fcf274b45653423 2246 main/binary-arm64/Packages.gz
+ d3269ec7e9d0accfacb1e5cc7f79b3bdcc128e3e 5984 main/binary-arm64/Packages
+ dff26fc3417203463cd43a3b1df88edc19bf6a9d 2243 main/binary-arm64/Packages.gz
  b4ae84477553ffa7912d0cb1dff9ad8486effdad 157 main/binary-arm64/Release
 SHA256:
- 4fd008e1133a24300c120f6f4e4787391ca087e59ae3d34188230a80e3eec85e 5984 main/binary-amd64/Packages
- 41ede61e91dde5a0b8eae7f58739081c64cafbeec9eb1e0303fb45fb1dd09f44 2247 main/binary-amd64/Packages.gz
+ 381f91ea90b69995bc56a4b51a78a453bb57666a667e172eadc02491c975bcf3 5984 main/binary-amd64/Packages
+ a28157db69da2af0d93020a1a4367f237ed9e85e8ae8ffd5f4b72464baa56be1 2248 main/binary-amd64/Packages.gz
  5892164c49515336372ba3dfa1b52f78b13e67ff5380b9037fb534e233bd92d2 157 main/binary-amd64/Release
- fedf0ff829451bffec2d58df69b40b52904dea5da29f6cfa65abea3e426601d7 5984 main/binary-arm64/Packages
- c5b99f59948a131ac611d76a3a6a745ebe83b032da95102f135a5ccc6f75b4ad 2246 main/binary-arm64/Packages.gz
+ 23b643254488d65bab69cfa6e53e481a0c1808b202ce512750f156afecb86746 5984 main/binary-arm64/Packages
+ c251e0c89faac07d777f93675a6814bfdac5689748907c110c0ca0da8f1f25e7 2243 main/binary-arm64/Packages.gz
  587c19a2ac54eda89e12fd2483b0e1b900d2ae2853c8ebbc9e8edaeb139c4863 157 main/binary-arm64/Release

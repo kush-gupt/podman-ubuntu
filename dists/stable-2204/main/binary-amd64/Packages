@@ -86,18 +86,18 @@ Description: OCI container network stack
  replacing CNI. Required by Podman 6.
 
 Package: passt
-Version: 20261025-1~jammy
+Version: 20261111-1~jammy
 Architecture: amd64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 925
+Installed-Size: 950
 Depends: libc6 (>= 2.34)
 Priority: optional
 Section: admin
-Filename: pool/main/p/passt/passt_20261025-1~jammy_amd64.deb
-Size: 367702
-SHA256: ff8f52bd883129d2f8ef40780b100230ba3867f2b3dc182824c74eee166301e3
-SHA1: b49734542df10c31fd477750e48f42d3f08c8bc2
-MD5sum: d402e0d90851e0301c2d6daac5eb0f96
+Filename: pool/main/p/passt/passt_20261111-1~jammy_amd64.deb
+Size: 380320
+SHA256: c7d2e5dd0764b9249dca34def96b56232e86aa8b45e3a262ab718cd5884d705f
+SHA1: fc09c5afff31000861943bf5a71e9408aba149b5
+MD5sum: 18dc699725f4f1b3acd949ee29ca01ac
 Description: user-mode networking daemons for rootless containers
  passt and pasta provide user-mode networking for rootless containers and
  virtual machines. pasta is the default rootless networking backend for
