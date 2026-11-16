@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: stable-2404
 Codename: stable-2404
-Date: Thu, 12 Nov 2026 20:42:43 UTC
+Date: Mon, 16 Nov 2026 12:38:51 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu stable track for Ubuntu 24.04
@@ -32,8 +32,8 @@ SHA256:
  18f55e64f4a5805ba61a0a7e39126b72f729d732d48c99b6b0d336593ea396a0 157 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCavYkwwAKCRB8516xqrdY
-E7sdAQC9AdGIbQkZFuPdUDFX5lots3yfAGTKVuh79IfoGA0gVwD/QSLw1w+gtNPC
-x6OyP/OI6AuD3tiRZeZasAIAhEszXA8=
-=OwDn
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCavr5WwAKCRB8516xqrdY
+E42ZAQCkM0A3bYk8RyEvqo/f6uORmerl1+4Ws8qJ9kukqzXYQwD9HlllYJPaNHDr
+JRWhy0gOBBafXBqSReBFzCqFaPDmLAw=
+=Xc+R
 -----END PGP SIGNATURE-----
