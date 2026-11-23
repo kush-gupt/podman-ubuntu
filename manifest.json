@@ -49,6 +49,9 @@
       },
       "7.0.0~git20261116.a6a942f": {
         "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
+      },
+      "7.0.0~git20261123.9f6a0c2": {
+        "packaging_sha": "f515e62af9b2ec0e7b3b0bb894218420e75e"
       }
     },
     "containers-common": {

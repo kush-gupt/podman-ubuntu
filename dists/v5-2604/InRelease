@@ -5,7 +5,7 @@ Origin: podman-ubuntu
 Label: podman-ubuntu
 Suite: v5-2604
 Codename: v5-2604
-Date: Mon, 16 Nov 2026 12:38:51 UTC
+Date: Mon, 23 Nov 2026 14:21:00 UTC
 Architectures: amd64 arm64
 Components: main
 Description: podman-ubuntu v5 track for Ubuntu 26.04
@@ -32,8 +32,8 @@ SHA256:
  43df763915d025cd4cc81b5d7504537c880b91d883d03e6e734f9b84bf6e90bb 149 main/binary-arm64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCavr5WwAKCRB8516xqrdY
-E+rYAQCJql43MMEhZIAnl2TLoSB6VaufHDgvvJs9A1Xf6DayegEA/0YGke5mSR1U
-AN2H1cBelIfAAacBBQmwLdm+xL3Byw0=
-=uD/m
+iHUEARYKAB0WIQRMWXZoE312/GJdSRF8516xqrdYEwUCawRLzAAKCRB8516xqrdY
+E8z4APwO2EJUuULYc4YbxqAqPv87HwSanUpVGASIuYk+CjVCTQD/VNBnweSQMCb+
+/p0Eh07EBcoxmChRsetOgX3O4qXX0AU=
+=+f3q
 -----END PGP SIGNATURE-----

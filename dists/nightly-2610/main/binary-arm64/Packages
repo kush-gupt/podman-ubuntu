@@ -1,17 +1,17 @@
 Package: podman
-Version: 7.0.0~git20261116.a6a942f-1~stonking
+Version: 7.0.0~git20261123.9f6a0c2-1~stonking
 Architecture: arm64
 Maintainer: Kush Gupta <kushalgupta@gmail.com>
-Installed-Size: 76198
+Installed-Size: 76328
 Depends: libc6 (>= 2.38), libgpgme45 (>= 1.23.2), libseccomp2 (>= 2.6.0), conmon (>= 2.0), crun | runc, netavark
 Recommends: containers-common
 Priority: optional
 Section: admin
-Filename: pool/main/p/podman/podman_7.0.0~git20261116.a6a942f-1~stonking_arm64.deb
-Size: 22763874
-SHA256: 6ae4b94278e670e4bd9de8a3158f258f64d0cb41536c346594f79c3523230898
-SHA1: b763d1be7331ceae5370f58e1a843867bdb80a2e
-MD5sum: e7a3f0b42d4788a25397582040f2d110
+Filename: pool/main/p/podman/podman_7.0.0~git20261123.9f6a0c2-1~stonking_arm64.deb
+Size: 22794484
+SHA256: cf0a57a6fce2bd0f6bf9dd79df6d7895339d13131688952f3756580a171cd7ca
+SHA1: 9184acf38158094ab83f5ae522f4b1002700491e
+MD5sum: 6877bd4d520c23f8da62ac9ee8eadd7c
 Description: daemonless container engine for managing OCI containers
  Podman manages pods, containers, and container images without requiring a
  central daemon. It provides a Docker-compatible command line interface and
