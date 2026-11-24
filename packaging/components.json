@@ -11,6 +11,18 @@
     "podman": "5.8.10",
     "rust": "1.85.0"
   },
+  "5.8.11": {
+    "aardvark-dns": "1.16.0",
+    "conmon": "2.2.1",
+    "containers-common": "0.70.0",
+    "crun": "1.31",
+    "go": "1.26.1",
+    "netavark": "1.16.0",
+    "passt": "20261124",
+    "passt_sha": "0b9abe75043cfed0d92b14e4f34e42ade9ee4221",
+    "podman": "5.8.11",
+    "rust": "1.85.0"
+  },
   "5.8.7": {
     "aardvark-dns": "1.16.0",
     "conmon": "2.1.13",
@@ -93,6 +105,18 @@
     "passt": "20261111",
     "passt_sha": "7380393df27ec3ae4aacb40b6f9f25f75a11acf5",
     "podman": "6.2.0",
+    "rust": "1.88.0"
+  },
+  "6.2.1": {
+    "aardvark-dns": "2.1.0",
+    "conmon": "2.2.1",
+    "containers-common": "0.70.0",
+    "crun": "1.31",
+    "go": "1.26.1",
+    "netavark": "2.1.0",
+    "passt": "20261124",
+    "passt_sha": "0b9abe75043cfed0d92b14e4f34e42ade9ee4221",
+    "podman": "6.2.1",
     "rust": "1.88.0"
   },
   "_note": "The full dependency stack pinned per podman version, taken from the upstream release notes of each podman release. The watch workflow seeds a new version's entry by carrying the previous release's stack forward; a human verifies the pins against the release notes before merge. CI fails the PR if a podman version has no entry here."
